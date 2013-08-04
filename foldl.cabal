@@ -1,0 +1,24 @@
+Name: foldl
+Version: 1.0.0
+Cabal-Version: >=1.8.0.2
+Build-Type: Simple
+License: BSD3
+License-File: LICENSE
+Copyright: 2013 Gabriel Gonzalez
+Author: Gabriel Gonzalez
+Maintainer: Gabriel439@gmail.com
+Bug-Reports: https://github.com/Gabriel439/Haskell-Fold-Library/issues
+Synopsis: Composable, streaming, strict left folds
+Description: This library provides strict left folds that stream in constant
+  memory, and you can combine folds using @Applicative@ style to derive new
+  folds.  Derived folds traverse the list only once and are as efficient as
+  hand-written folds.
+Category: Control
+Source-Repository head
+    Type: git
+    Location: https://github.com/Gabriel439/Haskell-Foldl-Library
+
+Library
+    Build-Depends: base >= 4 && < 5
+    Exposed-Modules: Control.Foldl
+    GHC-Options: -O2 -Wall
