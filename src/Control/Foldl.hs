@@ -27,7 +27,7 @@ module Control.Foldl
     , elemIndex
     , findIndex
 
-    -- * Generic Folds
+      -- * Generic Folds
     , genericLength
     , genericIndex
     ) where
