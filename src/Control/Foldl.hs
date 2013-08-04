@@ -117,11 +117,6 @@ length = genericLength
 -}
 {-# INLINABLE length #-}
 
--- | Like 'length', except with a more general 'Num' return value
-genericLength :: (Num b) => Fold a b
-genericLength = Fold (\n _ -> n + 1) 0 id
-{-# INLINABLE genericLength #-}
-
 -- | Returns 'True' if all elements are 'True', 'False' otherwise
 and :: Fold Bool Bool
 and = Fold (&&) True id
@@ -208,18 +203,6 @@ index :: Int -> Fold a (Maybe a)
 index = genericIndex
 {-# INLINABLE index #-}
 
--- | Like 'index', except with a more general 'Integral' argument
-genericIndex :: (Integral i) => i -> Fold a (Maybe a)
-genericIndex i = Fold step (Left' 0) done
-  where
-    step x a = case x of
-        Left'  j -> if (i == j) then Right' a else Left' (j + 1)
-        _        -> x
-    done x = case x of
-        Left'  _ -> Nothing
-        Right' a -> Just a
-{-# INLINABLE genericIndex #-}
-
 {-| @(elemIndex a)@ returns the index of the first element that equals @a@, or
     'Nothing' if no element matches
 -}
@@ -239,3 +222,20 @@ findIndex predicate = Fold step (Pair 0 False) done
         else                       Pair (i + 1) False
     done (Pair i b) = if b then Just i else Nothing
 {-# INLINABLE findIndex #-}
+
+-- | Like 'length', except with a more general 'Num' return value
+genericLength :: (Num b) => Fold a b
+genericLength = Fold (\n _ -> n + 1) 0 id
+{-# INLINABLE genericLength #-}
+
+-- | Like 'index', except with a more general 'Integral' argument
+genericIndex :: (Integral i) => i -> Fold a (Maybe a)
+genericIndex i = Fold step (Left' 0) done
+  where
+    step x a = case x of
+        Left'  j -> if (i == j) then Right' a else Left' (j + 1)
+        _        -> x
+    done x = case x of
+        Left'  _ -> Nothing
+        Right' a -> Just a
+{-# INLINABLE genericIndex #-}
