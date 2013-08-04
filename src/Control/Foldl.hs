@@ -32,7 +32,7 @@ module Control.Foldl
     , genericIndex
     ) where
 
-import Control.Applicative
+import Control.Applicative (Applicative(pure, (<*>)))
 import Data.List (foldl')
 import Prelude hiding
     ( head
