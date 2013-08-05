@@ -1,4 +1,7 @@
-{-| Import this module qualified to avoid clashing with the Prelude:
+{-| This module provides efficient, streaming left folds that you can combine
+    without sacrifice efficiency or streaming.
+
+    Import this module qualified to avoid clashing with the Prelude:
 
 >>> import qualified Control.Foldl as F
 
@@ -18,6 +21,8 @@
 
 >>> F.fold average [1..10000000]
 5000000.5
+>>> F.fold ((,) <$> F.minimum <*> F.maximum) [1..10000000]
+(Just 1,Just 10000000)
 
 -}
 
@@ -73,12 +78,14 @@ import Prelude hiding
     )
 
 {-| Efficient representation of a left fold that preserves the fold's step
-    function so that multiple folds can be combined into a single fold that
-    traverses the container only once
+    function, accumulator, and extraction function
+
+    This allows the 'Applicative' instance to assemble derived folds that
+    traverse the container only once
 -}
 data Fold a b = forall x . Fold (x -> a -> x) x (x -> b)
 
--- | Apply a 'Fold' to a container, computing the final result
+-- | Apply a 'Fold' to a container and extract the final result
 fold :: (Foldable f) => Fold a b -> f a -> b
 fold (Fold step nil done) as = done (foldl' step nil as)
 {-# INLINABLE fold #-}
