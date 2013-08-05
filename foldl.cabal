@@ -8,7 +8,7 @@ Copyright: 2013 Gabriel Gonzalez
 Author: Gabriel Gonzalez
 Maintainer: Gabriel439@gmail.com
 Bug-Reports: https://github.com/Gabriel439/Haskell-Fold-Library/issues
-Synopsis: Composable, streaming, strict left folds
+Synopsis: Composable, streaming, and efficient left folds
 Description: This library provides strict left folds that stream in constant
   memory, and you can combine folds using @Applicative@ style to derive new
   folds.  Derived folds still traverse the container just once and are as
