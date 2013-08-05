@@ -33,7 +33,7 @@ module Control.Foldl
     ) where
 
 import Control.Applicative (Applicative(pure, (<*>)))
-import Data.List (foldl')
+import Data.Foldable (Foldable, foldl')
 import Prelude hiding
     ( head
     , last
@@ -58,7 +58,7 @@ import Prelude hiding
 data Fold a b = forall x . Fold (x -> a -> x) x (x -> b)
 
 -- | Apply a 'Fold' to a container, computing the final result
-fold :: Fold a b -> [a] -> b
+fold :: (Foldable f) => Fold a b -> f a -> b
 fold (Fold step nil done) as = done (foldl' step nil as)
 {-# INLINABLE fold #-}
 
