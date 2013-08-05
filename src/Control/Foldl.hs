@@ -1,4 +1,25 @@
--- | Composable left folds
+{-| Import this module qualified to avoid clashing with the Prelude:
+
+>>> import qualified Control.Foldl as F
+
+    Use 'fold' to apply a 'Fold' to a container:
+
+>>> F.fold F.sum [1..100]
+5050
+
+    'Fold's are 'Applicative's, so you can combine them using 'Applicative'
+    style:
+
+>>> import Control.Applicative
+>>> let average = (/) <$> F.sum <*> F.genericLength
+
+    These combined folds will still traverse the container just once, streaming
+    the container in constant space:
+
+>>> F.fold average [1..10000000]
+5000000.5
+
+-}
 
 {-# LANGUAGE ExistentialQuantification #-}
 
