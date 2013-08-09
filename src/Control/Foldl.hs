@@ -59,7 +59,6 @@ module Control.Foldl
     ) where
 
 import Control.Applicative (Applicative(pure, (<*>)))
-import Data.Foldable (Foldable, foldl')
 import Prelude hiding
     ( head
     , last
@@ -86,9 +85,11 @@ import Prelude hiding
 data Fold a b = forall x . Fold (x -> a -> x) x (x -> b)
 
 -- | Apply a 'Fold' to a container and extract the final result
-fold :: (Foldable f) => Fold a b -> f a -> b
-fold (Fold step nil done) as = done (foldl' step nil as)
-{-# INLINABLE fold #-}
+fold :: Fold a b -> [a] -> b
+fold (Fold step nil done) as = done (foldr step' id as nil)
+  where
+    step' x k z = k $! step z x
+{-# INLINE fold #-}
 
 data Pair a b = Pair !a !b
 
