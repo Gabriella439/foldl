@@ -1,29 +1,35 @@
-{-| This module provides efficient, streaming left folds that you can combine
-    without sacrifice efficiency or streaming.
+{-| This module provides efficient and streaming left folds that you can combine
+    using 'Applicative' style.
 
     Import this module qualified to avoid clashing with the Prelude:
 
->>> import qualified Control.Foldl as F
+>>> import qualified Control.Foldl as L
 
-    Use 'fold' to apply a 'Fold' to a container:
+    Use 'fold' to apply a 'Fold' to a list:
 
->>> F.fold F.sum [1..100]
+>>> L.fold L.sum [1..100]
 5050
 
     'Fold's are 'Applicative's, so you can combine them using 'Applicative'
-    style:
+    combinators:
 
 >>> import Control.Applicative
->>> let average = (/) <$> F.sum <*> F.genericLength
+>>> let average = (/) <$> L.sum <*> L.genericLength
 
-    These combined folds will still traverse the container just once, streaming
-    the container in constant space:
+    These combined folds will still traverse the list only once, streaming
+    efficiently over the list in constant space without space leaks:
 
->>> F.fold average [1..10000000]
+>>> L.fold average [1..10000000]
 5000000.5
->>> F.fold ((,) <$> F.minimum <*> F.maximum) [1..10000000]
+>>> L.fold ((,) <$> L.minimum <*> L.maximum) [1..10000000]
 (Just 1,Just 10000000)
 
+    You can also unpack the `Fold` type if you want to extract the individual
+    components of combined folds for use with your own customized folding
+    utilities:
+
+> case ((/) <$> L.sum <*> L.genericLength) of
+>     L.Foldl step begin done -> ...
 -}
 
 {-# LANGUAGE ExistentialQuantification #-}
@@ -36,6 +42,7 @@ module Control.Foldl
     , foldM
 
       -- * Folds
+    , mconcat
     , head
     , last
     , null
@@ -61,6 +68,7 @@ module Control.Foldl
     ) where
 
 import Control.Applicative (Applicative(pure, (<*>)))
+import Data.Monoid (Monoid(mempty, mappend))
 import Prelude hiding
     ( head
     , last
@@ -79,14 +87,14 @@ import Prelude hiding
     )
 
 {-| Efficient representation of a left fold that preserves the fold's step
-    function, accumulator, and extraction function
+    function, initial accumulator, and extraction function
 
-    This allows the 'Applicative' instance to assemble derived folds that
+    This sallows the 'Applicative' instance to assemble derived folds that
     traverse the container only once
 -}
 data Fold a b = forall x . Fold (x -> a -> x) x (x -> b)
 
--- | Apply a 'Fold' to a container and extract the final result
+-- | Apply a strict left 'Fold' to a list and extract the final result
 fold :: Fold a b -> [a] -> b
 fold (Fold step begin done) as = done (foldr step' id as begin)
   where
@@ -150,6 +158,11 @@ foldM (FoldM step begin done) as0 = do
         x' <- step x a
         loop as $! x'
 {-# INLINABLE foldM #-}
+
+-- | Fold all values within a container using 'mappend' and 'mempty'
+mconcat :: (Monoid a) => Fold a a
+mconcat = Fold mappend mempty id
+{-# INLINABLE mconcat #-}
 
 data Maybe' a = Just' !a | Nothing'
 
