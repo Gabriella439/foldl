@@ -43,6 +43,7 @@ module Control.Foldl
 
       -- * Folds
     , mconcat
+    , foldMap
     , head
     , last
     , null
@@ -89,7 +90,7 @@ import Prelude hiding
 {-| Efficient representation of a left fold that preserves the fold's step
     function, initial accumulator, and extraction function
 
-    This sallows the 'Applicative' instance to assemble derived folds that
+    This allows the 'Applicative' instance to assemble derived folds that
     traverse the container only once
 -}
 data Fold a b = forall x . Fold (x -> a -> x) x (x -> b)
@@ -163,6 +164,11 @@ foldM (FoldM step begin done) as0 = do
 mconcat :: (Monoid a) => Fold a a
 mconcat = Fold mappend mempty id
 {-# INLINABLE mconcat #-}
+
+-- | Convert a \"@foldMap@\" to a 'Fold'
+foldMap :: (Monoid w) => (a -> w) -> (w -> b) -> Fold a b
+foldMap to from = Fold (\x a -> mappend x (to a)) mempty from
+{-# INLINABLE foldMap #-}
 
 data Maybe' a = Just' !a | Nothing'
 
