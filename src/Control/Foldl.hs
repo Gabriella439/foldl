@@ -88,7 +88,7 @@ data Fold a b = forall x . Fold (x -> a -> x) x (x -> b)
 
 -- | Apply a 'Fold' to a container and extract the final result
 fold :: Fold a b -> [a] -> b
-fold (Fold step nil done) as = done (foldr step' id as nil)
+fold (Fold step begin done) as = done (foldr step' id as begin)
   where
     step' x k z = k $! step z x
 {-# INLINE fold #-}
@@ -96,17 +96,17 @@ fold (Fold step nil done) as = done (foldr step' id as nil)
 data Pair a b = Pair !a !b
 
 instance Functor (Fold a) where
-    fmap f (Fold step nil done) = Fold step nil (f . done)
+    fmap f (Fold step begin done) = Fold step begin (f . done)
     {-# INLINABLE fmap #-}
 
 instance Applicative (Fold a) where
     pure b    = Fold (\() _ -> ()) () (\() -> b)
     {-# INLINABLE pure #-}
-    (Fold stepL nilL doneL) <*> (Fold stepR nilR doneR) =
+    (Fold stepL beginL doneL) <*> (Fold stepR beginR doneR) =
         let step (Pair xL xR) a = Pair (stepL xL a) (stepR xR a)
-            nil = Pair nilL nilR
+            begin = Pair beginL beginR
             done (Pair xL xR) = (doneL xL) (doneR xR)
-        in  Fold step nil done
+        in  Fold step begin done
     {-# INLINABLE (<*>) #-}
 
 -- | Like 'Fold', but monadic
