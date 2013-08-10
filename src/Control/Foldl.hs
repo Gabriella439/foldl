@@ -29,9 +29,11 @@
 {-# LANGUAGE ExistentialQuantification #-}
 
 module Control.Foldl
-    ( -- * The Fold Type
+    ( -- * Fold Types
       Fold(..)
     , fold
+    , FoldM(..)
+    , foldM
 
       -- * Folds
     , head
@@ -106,6 +108,48 @@ instance Applicative (Fold a) where
             done (Pair xL xR) = (doneL xL) (doneR xR)
         in  Fold step nil done
     {-# INLINABLE (<*>) #-}
+
+-- | Like 'Fold', but monadic
+data FoldM m a b = forall x . FoldM (x -> a -> m x) (m x) (x -> m b)
+
+instance (Monad m) => Functor (FoldM m a) where
+    fmap f (FoldM step start done) = FoldM step start done'
+      where
+        done' x = do
+            b <- done x
+            return $! f b
+    {-# INLINABLE fmap #-}
+
+instance (Monad m) => Applicative (FoldM m a) where
+    pure b = FoldM (\() _ -> return ()) (return ()) (\() -> return b)
+    {-# INLINABLE pure #-}
+    (FoldM stepL beginL doneL) <*> (FoldM stepR beginR doneR) =
+        let step (Pair xL xR) a = do
+                xL' <- stepL xL a
+                xR' <- stepR xR a
+                return $! Pair xL' xR'
+            begin = do
+                xL <- beginL
+                xR <- beginR
+                return $! Pair xL xR
+            done (Pair xL xR) = do
+                f <- doneL xL
+                x <- doneR xR
+                return $! f x
+        in  FoldM step begin done
+    {-# INLINABLE (<*>) #-}
+
+-- | Like 'fold', but monadic
+foldM :: (Monad m) => FoldM m a b -> [a] -> m b
+foldM (FoldM step begin done) as0 = do
+    x <- begin
+    loop as0 $! x
+  where
+    loop  []    x = done x
+    loop (a:as) x = do
+        x' <- step x a
+        loop as $! x'
+{-# INLINABLE foldM #-}
 
 data Maybe' a = Just' !a | Nothing'
 
