@@ -66,6 +66,18 @@ module Control.Foldl
       -- * Generic Folds
     , genericLength
     , genericIndex
+
+      -- * Input List Transformations
+    , mapped
+    , filtered
+    , unzipped
+    , tailed
+    , interspersed
+    , scannedl
+    , taken
+    , dropped
+    , takenWhile
+    , droppedWhile
     ) where
 
 import Control.Applicative (Applicative(pure, (<*>)))
@@ -332,18 +344,20 @@ genericIndex i = Fold step (Left' 0) done
         Right' a -> Just a
 {-# INLINABLE genericIndex #-}
 
+-- | @fold (mapped f folder) list == fold folder (map f list)@
+mapped :: (a -> b) -> Fold b r -> Fold a r
+mapped f (Fold step begin done) = Fold step' begin done
+  where
+    step' x = step x . f
+{-# INLINABLE mapped #-}
+
 -- | @fold (filtered pred folder) list == fold folder (filter pred list)@
 filtered :: (a -> Bool) -> Fold a r -> Fold a r
 filtered predicate (Fold step begin done) = Fold step' begin done
   where
     step' x a | predicate a = step x a
               | otherwise   = x
-
--- | @fold (mapped f folder) list == fold folder (map f list)@
-mapped :: (a -> b) -> Fold b r -> Fold a r
-mapped f (Fold step begin done) = Fold step' begin done
-  where
-    step' x = step x . f
+{-# INLINABLE filtered #-}
 
 -- | @fold (unzipped aFolder bFolder) list = let (aList, bList) = unzip list in (fold aFolder aList) (fold bFolder bList)@
 unzipped :: Fold a a' -> Fold b b' -> Fold (a, b) (a', b')
@@ -353,6 +367,7 @@ unzipped (Fold stepA beginA doneA) (Fold stepB beginB doneB)
         step (Pair xA xB) (a, b) = Pair (stepA xA a) (stepB xB b)
         begin = Pair beginA beginB
         done (Pair xA xB) = (doneA xA, doneB xB)
+{-# INLINABLE unzipped #-}
 
 -- | @fold (tailed folder) list == fmap (fold folder) (tailMaybe list)@
 -- | where tailMaybe is a safe replacement for tail
@@ -364,6 +379,7 @@ tailed (Fold step begin done) = Fold step' begin' done'
     begin' = Nothing'
     done' Nothing' = Nothing
     done' (Just' x) = Just (done x)
+{-# INLINABLE tailed #-}
 
 -- | @fold (interspersed x folder) list = fold folder (intersperse x list)@
 interspersed :: a -> Fold a r -> Fold a r
@@ -374,6 +390,7 @@ interspersed a (Fold step begin done) = Fold step' begin' done'
     begin' = Nothing'
     done' Nothing' = done begin
     done' (Just' x) = done x
+{-# INLINABLE interspersed #-}
 
 -- | @fold (scannedl f z folder) list = fold folder (scanl f z list)@
 scannedl :: (a -> b -> a) -> a -> Fold a r -> Fold b r
@@ -382,6 +399,7 @@ scannedl f z (Fold step begin done) = Fold step' begin' done'
     step' (Pair s x) a = let s' = f s a in Pair s' (step x s')
     begin' = Pair z (step begin z)
     done' (Pair _ x) = done x
+{-# INLINABLE scannedl #-}
 
 -- | @fold (taken n folder) list = fold folder (take n list)@
 taken :: Int -> Fold a r -> Fold a r
@@ -392,6 +410,7 @@ taken n (Fold step begin done) = Fold step' begin' done'
     step' (Pair m x) a = Pair (m - 1) (step x a)
     begin' = Pair n begin
     done' (Pair _ x) = done x
+{-# INLINABLE taken #-}
 
 -- | @fold (dropped n folder) list = fold folder (drop n list)@
 dropped :: Int -> Fold a r -> Fold a r
@@ -404,6 +423,7 @@ dropped n (Fold step begin done) = Fold step' begin' done'
     begin' = Left' n
     done' (Left' _) = done begin
     done' (Right' x) = done x
+{-# INLINABLE dropped #-}
 
 -- | @fold (takenWhile pred folder) list = fold folder (takeWhile pred list)@
 takenWhile :: (a -> Bool) -> Fold a r -> Fold a r
@@ -414,6 +434,7 @@ takenWhile predicate (Fold step begin done) = Fold step' begin' done'
                           | otherwise   = Pair False x
     begin' = Pair True begin
     done' (Pair _ x) = done x
+{-# INLINABLE takenWhile #-}
 
 -- | @fold (droppedWhile pred folder) list = fold folder (dropWhile pred list)@
 droppedWhile :: (a -> Bool) -> Fold a r -> Fold a r
@@ -424,3 +445,4 @@ droppedWhile predicate (Fold step begin done) = Fold step' begin' done'
                           | otherwise   = Pair False (step x a)
     begin' = Pair True begin
     done' (Pair _ x) = done x
+{-# INLINABLE droppedWhile #-}
