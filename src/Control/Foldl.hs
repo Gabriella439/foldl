@@ -105,54 +105,29 @@ import Prelude hiding
     This allows the 'Applicative' instance to assemble derived folds that
     traverse the container only once
 -}
-data Fold a b = forall x . Fold (x -> a -> x) x (x -> b) (x -> Bool)
+data Fold a b = forall x . Fold (x -> a -> x) x (x -> b)
 
--- | Apply a strict left 'Fold' to a list, ignoring any early termination signals, and extract the final result
-foldAll :: Fold a b -> [a] -> b
-foldAll (Fold step begin done _) as = done (foldr step' id as begin)
+-- | Apply a strict left 'Fold' to a list and extract the final result
+fold :: Fold a b -> [a] -> b
+fold (Fold step begin done) as = done (foldr step' id as begin)
   where
     step' x k z = k $! step z x
 {-# INLINE fold #-}
 
--- | Apply a strict left 'Fold' to a list and extract the final result
-fold :: Fold a b -> [a] -> b
-fold (Fold step begin done isDone) = go begin where
-    go s list | s `seq` False = error "unreachable"
-              | isDone s      = done s
-              | otherwise     = case list of
-                  []       -> done s
-                  (x : xs) -> go (step s x) xs
-
--- | Apply a strict left 'Fold' to a list and extract the final result
-foldUnrolled :: Fold a b -> [a] -> b
-foldUnrolled (Fold step begin done isDone) = go begin where
-    go s list | s `seq` False = error "unreachable"
-              | isDone s      = done s
-              | otherwise     = case list of
-                  []                       -> done s
-                  [x]                      -> done (step s x)
-                  [x1, x2]                 -> done (step (step s x1) x2)
-                  [x1, x2, x3]             -> done (step (step (step s x1) x2) x3)
-                  (x1 : x2 : x3 : x4 : xs) -> go (step (step (step (step s x1) x2) x3) x4) xs
-
 data Pair a b = Pair !a !b
 
-snd' :: Pair a b -> b
-snd' (Pair _ b) = b
-
 instance Functor (Fold a) where
-    fmap f (Fold step begin done isDone) = Fold step begin (f . done) isDone
+    fmap f (Fold step begin done) = Fold step begin (f . done)
     {-# INLINABLE fmap #-}
 
 instance Applicative (Fold a) where
-    pure b    = Fold (\() _ -> ()) () (\() -> b) (const True)
+    pure b    = Fold (\() _ -> ()) () (\() -> b)
     {-# INLINABLE pure #-}
-    (Fold stepL beginL doneL isDoneL) <*> (Fold stepR beginR doneR isDoneR) =
+    (Fold stepL beginL doneL) <*> (Fold stepR beginR doneR) =
         let step (Pair xL xR) a = Pair (stepL xL a) (stepR xR a)
             begin = Pair beginL beginR
             done (Pair xL xR) = (doneL xL) (doneR xR)
-            isDone (Pair xL xR) = isDoneL xL && isDoneR xR
-        in  Fold step begin done isDone
+        in  Fold step begin done
     {-# INLINABLE (<*>) #-}
 
 -- | Like 'Fold', but monadic
@@ -199,12 +174,12 @@ foldM (FoldM step begin done) as0 = do
 
 -- | Fold all values within a container using 'mappend' and 'mempty'
 mconcat :: (Monoid a) => Fold a a
-mconcat = Fold mappend mempty id (const False)
+mconcat = Fold mappend mempty id
 {-# INLINABLE mconcat #-}
 
 -- | Convert a \"@foldMap@\" to a 'Fold'
 foldMap :: (Monoid w) => (a -> w) -> (w -> b) -> Fold a b
-foldMap to from = Fold (\x a -> mappend x (to a)) mempty from (const False)
+foldMap to from = Fold (\x a -> mappend x (to a)) mempty from
 {-# INLINABLE foldMap #-}
 
 data Maybe' a = Just' !a | Nothing'
@@ -213,15 +188,11 @@ lazy :: Maybe' a -> Maybe a
 lazy  Nothing'  = Nothing
 lazy (Just' a') = Just a'
 
-isJust' :: Maybe' a -> Bool
-isJust'  Nothing' = False
-isJust' (Just' _) = True
-
 {-| Get the first element of a container or return 'Nothing' if the container is
     empty
 -}
 head :: Fold a (Maybe a)
-head = Fold step Nothing' lazy isJust'
+head = Fold step Nothing' lazy
   where
     step x a = case x of
         Nothing' -> Just' a
@@ -232,12 +203,12 @@ head = Fold step Nothing' lazy isJust'
     empty
 -}
 last :: Fold a (Maybe a)
-last = Fold (\_ -> Just') Nothing' lazy (const False)
+last = Fold (\_ -> Just') Nothing' lazy
 {-# INLINABLE last #-}
 
 -- | Returns 'True' if the container is empty, 'False' otherwise
 null :: Fold a Bool
-null = Fold (\_ _ -> False) True id not
+null = Fold (\_ _ -> False) True id
 {-# INLINABLE null #-}
 
 -- | Return the length of the container
@@ -252,41 +223,41 @@ length = genericLength
 
 -- | Returns 'True' if all elements are 'True', 'False' otherwise
 and :: Fold Bool Bool
-and = Fold (&&) True id not
+and = Fold (&&) True id
 {-# INLINABLE and #-}
 
 -- | Returns 'True' if any element is 'True', 'False' otherwise
 or :: Fold Bool Bool
-or = Fold (||) False id id
+or = Fold (||) False id
 {-# INLINABLE or #-}
 
 {-| @(all predicate)@ returns 'True' if all elements satisfy the predicate,
     'False' otherwise
 -}
 all :: (a -> Bool) -> Fold a Bool
-all predicate = Fold (\x a -> x && predicate a) True id not
+all predicate = Fold (\x a -> x && predicate a) True id
 {-# INLINABLE all #-}
 
 {-| @(any predicate)@ returns 'True' is any element satisfies the predicate,
     'False' otherwise
 -}
 any :: (a -> Bool) -> Fold a Bool
-any predicate = Fold (\x a -> x || predicate a) False id id
+any predicate = Fold (\x a -> x || predicate a) False id
 {-# INLINABLE any #-}
 
 -- | Computes the sum of all elements
 sum :: (Num a) => Fold a a
-sum = Fold (+) 0 id (const False)
+sum = Fold (+) 0 id
 {-# INLINABLE sum #-}
 
 -- | Computes the product all elements
 product :: (Num a) => Fold a a
-product = Fold (*) 1 id (const False)
+product = Fold (*) 1 id
 {-# INLINABLE product #-}
 
 -- | Computes the maximum element
 maximum :: (Ord a) => Fold a (Maybe a)
-maximum = Fold step Nothing' lazy (const False)
+maximum = Fold step Nothing' lazy
   where
     step x a = Just' (case x of
         Nothing' -> a
@@ -295,7 +266,7 @@ maximum = Fold step Nothing' lazy (const False)
 
 -- | Computes the minimum element
 minimum :: (Ord a) => Fold a (Maybe a)
-minimum = Fold step Nothing' lazy (const False)
+minimum = Fold step Nothing' lazy
   where
     step x a = Just' (case x of
         Nothing' -> a
@@ -320,7 +291,7 @@ notElem a = all (a /=)
     'Nothing' if no element satisfies the predicate
 -}
 find :: (a -> Bool) -> Fold a (Maybe a)
-find predicate = Fold step Nothing' lazy isJust'
+find predicate = Fold step Nothing' lazy
   where
     step x a = case x of
         Nothing' -> if (predicate a) then Just' a else Nothing'
@@ -328,10 +299,6 @@ find predicate = Fold step Nothing' lazy isJust'
 {-# INLINABLE find #-}
 
 data Either' a b = Left' !a | Right' !b
-
-isRight' :: Either' a b -> Bool
-isRight' (Left' _)  = False
-isRight' (Right' _) = True
 
 {-| @(index n)@ returns the @n@th element of the container, or 'Nothing' if the
     container has an insufficient number of elements
@@ -351,7 +318,7 @@ elemIndex a = findIndex (a ==)
     satisfies the predicate, or 'Nothing' if no element satisfies the predicate
 -}
 findIndex :: (a -> Bool) -> Fold a (Maybe Int)
-findIndex predicate = Fold step (Pair 0 False) done snd'
+findIndex predicate = Fold step (Pair 0 False) done
   where
     step x@(Pair i b) a =
         if b                  then x
@@ -362,12 +329,12 @@ findIndex predicate = Fold step (Pair 0 False) done snd'
 
 -- | Like 'length', except with a more general 'Num' return value
 genericLength :: (Num b) => Fold a b
-genericLength = Fold (\n _ -> n + 1) 0 id (const False)
+genericLength = Fold (\n _ -> n + 1) 0 id
 {-# INLINABLE genericLength #-}
 
 -- | Like 'index', except with a more general 'Integral' argument
 genericIndex :: (Integral i) => i -> Fold a (Maybe a)
-genericIndex i = Fold step (Left' 0) done isRight'
+genericIndex i = Fold step (Left' 0) done
   where
     step x a = case x of
         Left'  j -> if (i == j) then Right' a else Left' (j + 1)
@@ -379,14 +346,14 @@ genericIndex i = Fold step (Left' 0) done isRight'
 
 -- | @fold (mapped f folder) list == fold folder (map f list)@
 mapped :: (a -> b) -> Fold b r -> Fold a r
-mapped f (Fold step begin done isDone) = Fold step' begin done isDone
+mapped f (Fold step begin done) = Fold step' begin done
   where
     step' x = step x . f
 {-# INLINABLE mapped #-}
 
 -- | @fold (filtered pred folder) list == fold folder (filter pred list)@
 filtered :: (a -> Bool) -> Fold a r -> Fold a r
-filtered predicate (Fold step begin done isDone) = Fold step' begin done isDone
+filtered predicate (Fold step begin done) = Fold step' begin done
   where
     step' x a | predicate a = step x a
               | otherwise   = x
@@ -394,68 +361,61 @@ filtered predicate (Fold step begin done isDone) = Fold step' begin done isDone
 
 -- | @fold (unzipped aFolder bFolder) list = let (aList, bList) = unzip list in (fold aFolder aList) (fold bFolder bList)@
 unzipped :: Fold a a' -> Fold b b' -> Fold (a, b) (a', b')
-unzipped (Fold stepA beginA doneA isDoneA) (Fold stepB beginB doneB isDoneB)
-    = Fold step begin done isDone
+unzipped (Fold stepA beginA doneA) (Fold stepB beginB doneB)
+    = Fold step begin done
       where
         step (Pair xA xB) (a, b) = Pair (stepA xA a) (stepB xB b)
         begin = Pair beginA beginB
         done (Pair xA xB) = (doneA xA, doneB xB)
-        isDone (Pair xA xB) = isDoneA xA && isDoneB xB
 {-# INLINABLE unzipped #-}
 
 -- | @fold (tailed folder) list == fmap (fold folder) (tailMaybe list)@
 -- | where tailMaybe is a safe replacement for tail
 tailed :: Fold a r -> Fold a (Maybe r)
-tailed (Fold step begin done isDone) = Fold step' begin' done' isDone'
+tailed (Fold step begin done) = Fold step' begin' done'
   where
     step' Nothing' _ = Just' begin
     step' (Just' x) a = Just' (step x a)
     begin' = Nothing'
     done' Nothing' = Nothing
     done' (Just' x) = Just (done x)
-    isDone' Nothing' = False
-    isDone' (Just' x) = isDone x
 {-# INLINABLE tailed #-}
 
 -- | @fold (interspersed x folder) list = fold folder (intersperse x list)@
 interspersed :: a -> Fold a r -> Fold a r
-interspersed a (Fold step begin done isDone) = Fold step' begin' done' isDone'
+interspersed a (Fold step begin done) = Fold step' begin' done'
   where
     step' Nothing' b = Just' (step begin b)
     step' (Just' x) b = Just' (step (step x a) b)
     begin' = Nothing'
     done' Nothing' = done begin
     done' (Just' x) = done x
-    isDone' Nothing' = False
-    isDone' (Just' x) = isDone x
 {-# INLINABLE interspersed #-}
 
 -- | @fold (scannedl f z folder) list = fold folder (scanl f z list)@
 scannedl :: (a -> b -> a) -> a -> Fold a r -> Fold b r
-scannedl f z (Fold step begin done isDone) = Fold step' begin' done' isDone'
+scannedl f z (Fold step begin done) = Fold step' begin' done'
   where
     step' (Pair s x) a = let s' = f s a in Pair s' (step x s')
     begin' = Pair z (step begin z)
     done' (Pair _ x) = done x
-    isDone' (Pair _ x) = isDone x
 {-# INLINABLE scannedl #-}
 
 -- | @fold (taken n folder) list = fold folder (take n list)@
 taken :: Int -> Fold a r -> Fold a r
-taken n (Fold _ begin done _) | n < 0 = pure (done begin)
-taken n (Fold step begin done isDone) = Fold step' begin' done' isDone'
+taken n (Fold _ begin done) | n < 0 = pure (done begin)
+taken n (Fold step begin done) = Fold step' begin' done'
   where
     step' (Pair 0 x) _ = Pair 0 x
     step' (Pair m x) a = Pair (m - 1) (step x a)
     begin' = Pair n begin
     done' (Pair _ x) = done x
-    isDone' (Pair m x) = m == 0 || isDone x
 {-# INLINABLE taken #-}
 
 -- | @fold (dropped n folder) list = fold folder (drop n list)@
 dropped :: Int -> Fold a r -> Fold a r
 dropped n folder | n <= 0 = folder
-dropped n (Fold step begin done isDone) = Fold step' begin' done' isDone'
+dropped n (Fold step begin done) = Fold step' begin' done'
   where
     step' (Left' 0) a = Right' (step begin a)
     step' (Left' m) _ = Left' (m - 1)
@@ -463,30 +423,26 @@ dropped n (Fold step begin done isDone) = Fold step' begin' done' isDone'
     begin' = Left' n
     done' (Left' _) = done begin
     done' (Right' x) = done x
-    isDone' (Left' _) = isDone begin
-    isDone' (Right' x) = isDone x
 {-# INLINABLE dropped #-}
 
 -- | @fold (takenWhile pred folder) list = fold folder (takeWhile pred list)@
 takenWhile :: (a -> Bool) -> Fold a r -> Fold a r
-takenWhile predicate (Fold step begin done isDone) = Fold step' begin' done' isDone'
+takenWhile predicate (Fold step begin done) = Fold step' begin' done'
   where
     step' (Pair False x) _ = Pair False x
     step' (Pair True x) a | predicate a = Pair True (step x a)
                           | otherwise   = Pair False x
     begin' = Pair True begin
     done' (Pair _ x) = done x
-    isDone' (Pair ongoing x) = not ongoing || isDone x
 {-# INLINABLE takenWhile #-}
 
 -- | @fold (droppedWhile pred folder) list = fold folder (dropWhile pred list)@
 droppedWhile :: (a -> Bool) -> Fold a r -> Fold a r
-droppedWhile predicate (Fold step begin done isDone) = Fold step' begin' done' isDone'
+droppedWhile predicate (Fold step begin done) = Fold step' begin' done'
   where
     step' (Pair False x) a = Pair False (step x a)
     step' (Pair True x) a | predicate a = Pair True x
                           | otherwise   = Pair False (step x a)
     begin' = Pair True begin
     done' (Pair _ x) = done x
-    isDone' (Pair _ x) = isDone x
 {-# INLINABLE droppedWhile #-}
