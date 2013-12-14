@@ -68,7 +68,7 @@ module Control.Foldl
     , genericIndex
     ) where
 
-import Control.Applicative (Applicative(pure, (<*>)))
+import Control.Applicative (Applicative(pure, (<*>)),liftA2)
 import Data.Monoid (Monoid(mempty, mappend))
 import Prelude hiding
     ( head
@@ -118,6 +118,13 @@ instance Applicative (Fold a) where
         in  Fold step begin done
     {-# INLINABLE (<*>) #-}
 
+instance Monoid b => Monoid (Fold a b) where
+    mempty = pure mempty
+    {-# INLINABLE mempty #-}
+    mappend = liftA2 mappend
+    {-# INLINABLE mappend #-}
+
+
 -- | Like 'Fold', but monadic
 data FoldM m a b = forall x . FoldM (x -> a -> m x) (m x) (x -> m b)
 
@@ -147,6 +154,13 @@ instance (Monad m) => Applicative (FoldM m a) where
                 return $! f x
         in  FoldM step begin done
     {-# INLINABLE (<*>) #-}
+
+instance (Monoid b, Monad m) => Monoid (FoldM m a b) where
+    mempty = pure mempty
+    {-# INLINABLE mempty #-}
+    mappend = liftA2 mappend
+    {-# INLINABLE mappend #-}
+
 
 -- | Like 'fold', but monadic
 foldM :: (Monad m) => FoldM m a b -> [a] -> m b
