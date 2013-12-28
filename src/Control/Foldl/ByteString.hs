@@ -18,13 +18,13 @@ module Control.Foldl.ByteString (
     , findIndex
     ) where
 
+import Control.Foldl (Fold)
+import Control.Foldl.Internal (Maybe'(..), lazy, strict, Either'(..), hush)
+import qualified Control.Foldl as L
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Unsafe as BU
 import Data.Word (Word8)
-import Control.Foldl (Fold)
-import Control.Foldl.Internal (Maybe'(..), lazy, strict, Either'(..), hush)
-import qualified Control.Foldl as L
 import Prelude hiding (
     head, last, null, length, any, all, maximum, minimum, elem, notElem )
 
@@ -34,11 +34,11 @@ import Prelude hiding (
 head :: Fold ByteString (Maybe Word8)
 head = L.Fold step Nothing' lazy
   where
-    step mbs bs =
+    step mw8 bs =
         if B.null bs
-        then mbs
-        else case mbs of
-            Just' _  -> mbs
+        then mw8
+        else case mw8 of
+            Just' _  -> mw8
             Nothing' -> Just' (BU.unsafeHead bs)
 {-# INLINABLE head #-}
 
@@ -48,9 +48,9 @@ head = L.Fold step Nothing' lazy
 last :: Fold ByteString (Maybe Word8)
 last = L.Fold step Nothing' lazy
   where
-    step mbs bs =
+    step mw8 bs =
         if B.null bs
-        then mbs
+        then mw8
         else Just' (B.last bs)
         -- TODO: Use `unsafeLast` when Debian Stable Haskell Platform has it
 {-# INLINABLE last #-}
@@ -153,7 +153,7 @@ elemIndex w8 = findIndex (w8 ==)
 {-# INLINABLE elemIndex #-}
 
 {-| @(findIndex predicate)@ returns the index of the first byte that satisfies
-    the predicate, or 'Notihng' if no byte satisfies the predicate
+    the predicate, or 'Nothing' if no byte satisfies the predicate
 -}
 findIndex :: (Num n) => (Word8 -> Bool) -> Fold ByteString (Maybe n)
 findIndex predicate = L.Fold step (Left' 0) hush

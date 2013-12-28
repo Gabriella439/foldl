@@ -21,11 +21,13 @@ Source-Repository head
 Library
     HS-Source-Dirs: src
     Build-Depends:
-        base       >= 4       && < 5   ,
-        bytestring >= 0.9.2.1 && < 0.11
+        base       >= 4        && < 5   ,
+        bytestring >= 0.9.2.1  && < 0.11,
+        text       >= 0.11.2.0 && < 1.1
     Exposed-Modules:
         Control.Foldl,
-        Control.Foldl.ByteString
+        Control.Foldl.ByteString,
+        Control.Foldl.Text
     Other-Modules:
         Control.Foldl.Internal
     GHC-Options: -O2 -Wall
