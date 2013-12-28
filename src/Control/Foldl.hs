@@ -32,16 +32,21 @@
 >     L.Foldl step begin done -> ...
 -}
 
-{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE ExistentialQuantification, RankNTypes #-}
 
-module Control.Foldl
-    ( -- * Fold Types
+module Control.Foldl (
+    -- * Fold Types
       Fold(..)
     , fold
     , FoldM(..)
     , foldM
 
-      -- * Folds
+    -- * Utilities
+    -- $utilities
+    , purely
+    , impurely
+
+    -- * Folds
     , mconcat
     , foldMap
     , head
@@ -174,6 +179,41 @@ foldM (FoldM step begin done) as0 = do
         x' <- step x a
         loop as $! x'
 {-# INLINABLE foldM #-}
+
+{- $utilities
+    'purely' and 'impurely' allow you to write folds compatible with the @foldl@
+    library without incurring a @foldl@ dependency.  Write your fold to accept
+    three parameters corresponding to the step function, initial
+    accumulator, and extraction function and then users can upgrade your
+    function to accept a 'Fold' or 'FoldM' using the 'purely' or 'impurely'
+    combinators.
+
+    For example, the @pipes@ library implements a @foldM@ function in
+    @Pipes.Prelude@ with the following type:
+
+> foldM
+>     :: (Monad m)
+>     => (x -> a -> m x) -> m x -> (x -> m b) -> Producer a m () -> m b
+
+    @foldM@ is set up so that you can wrap it with 'impurely' to accept a
+    'FoldM' instead:
+
+> impurely foldM :: (Monad m) => FoldM m a b -> Producer a m () -> m b
+-}
+
+-- | Upgrade a fold to accept the 'Fold' type
+purely :: (forall x . (x -> a -> x) -> x -> (x -> b) -> r) -> Fold a b -> r
+purely f (Fold step begin done) = f step begin done
+{-# INLINABLE purely #-}
+
+-- | Upgrade a monadic fold to accept the 'FoldM' type
+impurely
+    :: (Monad m)
+    => (forall x . (x -> a -> m x) -> m x -> (x -> m b) -> r)
+    -> FoldM m a b
+    -> r
+impurely f (FoldM step begin done) = f step begin done
+{-# INLINABLE impurely #-}
 
 -- | Fold all values within a container using 'mappend' and 'mempty'
 mconcat :: (Monoid a) => Fold a a
