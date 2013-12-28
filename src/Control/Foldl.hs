@@ -69,6 +69,7 @@ module Control.Foldl
     ) where
 
 import Control.Applicative (Applicative(pure, (<*>)),liftA2)
+import Control.Foldl.Internal (Maybe'(..), lazy, Either'(..), hush)
 import Data.Monoid (Monoid(mempty, mappend))
 import Prelude hiding
     ( head
@@ -184,12 +185,6 @@ foldMap :: (Monoid w) => (a -> w) -> (w -> b) -> Fold a b
 foldMap to from = Fold (\x a -> mappend x (to a)) mempty from
 {-# INLINABLE foldMap #-}
 
-data Maybe' a = Just' !a | Nothing'
-
-lazy :: Maybe' a -> Maybe a
-lazy  Nothing'  = Nothing
-lazy (Just' a') = Just a'
-
 {-| Get the first element of a container or return 'Nothing' if the container is
     empty
 -}
@@ -240,7 +235,7 @@ all :: (a -> Bool) -> Fold a Bool
 all predicate = Fold (\x a -> x && predicate a) True id
 {-# INLINABLE all #-}
 
-{-| @(any predicate)@ returns 'True' is any element satisfies the predicate,
+{-| @(any predicate)@ returns 'True' if any element satisfies the predicate,
     'False' otherwise
 -}
 any :: (a -> Bool) -> Fold a Bool
@@ -300,8 +295,6 @@ find predicate = Fold step Nothing' lazy
         _        -> x
 {-# INLINABLE find #-}
 
-data Either' a b = Left' !a | Right' !b
-
 {-| @(index n)@ returns the @n@th element of the container, or 'Nothing' if the
     container has an insufficient number of elements
 -}
@@ -320,13 +313,14 @@ elemIndex a = findIndex (a ==)
     satisfies the predicate, or 'Nothing' if no element satisfies the predicate
 -}
 findIndex :: (a -> Bool) -> Fold a (Maybe Int)
-findIndex predicate = Fold step (Pair 0 False) done
+findIndex predicate = Fold step (Left' 0) hush
   where
-    step x@(Pair i b) a =
-        if b                  then x
-        else if (predicate a) then Pair  i      True
-        else                       Pair (i + 1) False
-    done (Pair i b) = if b then Just i else Nothing
+    step x a = case x of
+        Left' i ->
+            if predicate a
+            then Right' i
+            else Left' (i + 1)
+        _       -> x
 {-# INLINABLE findIndex #-}
 
 -- | Like 'length', except with a more general 'Num' return value
