@@ -16,6 +16,11 @@ module Control.Foldl.Text (
     , index
     , elemIndex
     , findIndex
+
+    -- * Re-exports
+    -- $reexports
+    , module Control.Foldl
+    , module Data.Text
     ) where
 
 import Control.Foldl (Fold)
@@ -163,3 +168,9 @@ findIndex predicate = L.Fold step (Left' 0) hush
             Just n  -> Right' (m + fromIntegral n)
         _       -> x
 {-# INLINABLE findIndex #-}
+
+{- $reexports
+    "Control.Foldl" re-exports the 'Fold' type
+
+    @Data.Text@ re-exports the 'Text' type
+-}

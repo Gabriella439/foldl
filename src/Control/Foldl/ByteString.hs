@@ -16,6 +16,12 @@ module Control.Foldl.ByteString (
     , index
     , elemIndex
     , findIndex
+
+    -- * Re-exports
+    -- $reexports
+    , module Control.Foldl
+    , module Data.ByteString
+    , module Data.Word
     ) where
 
 import Control.Foldl (Fold)
@@ -164,3 +170,12 @@ findIndex predicate = L.Fold step (Left' 0) hush
             Just n  -> Right' (m + fromIntegral n)
         _       -> x
 {-# INLINABLE findIndex #-}
+
+{- $reexports
+
+    "Control.Foldl" re-exports the 'Fold' type
+
+    @Data.ByteString@ re-exports the 'ByteString' type
+
+    @Data.Word@ re-exports the 'Word8' type
+-}
