@@ -111,7 +111,7 @@ data Fold a b = forall x . Fold (x -> a -> x) x (x -> b)
 
 -- | Apply a strict left 'Fold' to a list
 fold :: Fold a b -> [a] -> b
-fold (Fold step begin done) as = done (foldr step' id as begin)
+fold (Fold step begin done) as = foldr step' done as begin
   where
     step' x k z = k $! step z x
 {-# INLINE fold #-}
@@ -122,7 +122,7 @@ fold (Fold step begin done) as = done (foldr step' id as begin)
     not trigger @build/foldr@ fusion
 -}
 foldable :: (Foldable f) => Fold a b -> f a -> b
-foldable (Fold step begin done) as = done (F.foldr step' id as begin)
+foldable (Fold step begin done) as = F.foldr step' done as begin
   where
     step' x k z = k $! step z x
 {-# INLINE foldable #-}
