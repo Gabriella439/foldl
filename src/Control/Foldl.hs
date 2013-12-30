@@ -38,10 +38,8 @@ module Control.Foldl (
     -- * Fold Types
       Fold(..)
     , fold
-    , foldable
     , FoldM(..)
     , foldM
-    , foldableM
 
     -- * Utilities
     -- $utilities
@@ -109,23 +107,16 @@ import Prelude hiding
 -}
 data Fold a b = forall x . Fold (x -> a -> x) x (x -> b)
 
--- | Apply a strict left 'Fold' to a list
-fold :: Fold a b -> [a] -> b
-fold (Fold step begin done) as = foldr step' done as begin
-  where
-    step' x k z = k $! step z x
-{-# INLINE fold #-}
-
 {-| Apply a strict left 'Fold' to a 'Foldable' container
 
     Much slower than 'fold' on lists because 'Foldable' operations currently do
     not trigger @build/foldr@ fusion
 -}
-foldable :: (Foldable f) => Fold a b -> f a -> b
-foldable (Fold step begin done) as = F.foldr step' done as begin
+fold :: (Foldable f) => Fold a b -> f a -> b
+fold (Fold step begin done) as = F.foldr step' done as begin
   where
     step' x k z = k $! step z x
-{-# INLINE foldable #-}
+{-# INLINE fold #-}
 
 data Pair a b = Pair !a !b
 
@@ -186,26 +177,15 @@ instance (Monoid b, Monad m) => Monoid (FoldM m a b) where
     {-# INLINABLE mappend #-}
 
 -- | Like 'fold', but monadic
-foldM :: (Monad m) => FoldM m a b -> [a] -> m b
+foldM :: (Foldable f, Monad m) => FoldM m a b -> f a -> m b
 foldM (FoldM step begin done) as0 = do
-    x0 <- begin
-    foldr step' done as0 $! x0
-  where
-    step' a k x = do
-        x' <- step x a
-        k $! x'
-{-# INLINE foldM #-}
-
--- | Like 'foldable', but monadic
-foldableM :: (Foldable f, Monad m) => FoldM m a b -> f a -> m b
-foldableM (FoldM step begin done) as0 = do
     x0 <- begin
     F.foldr step' done as0 $! x0
   where
     step' a k x = do
         x' <- step x a
         k $! x'
-{-# INLINE foldableM #-}
+{-# INLINE foldM #-}
 
 {- $utilities
     'purely' and 'impurely' allow you to write folds compatible with the @foldl@
