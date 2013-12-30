@@ -1,4 +1,4 @@
--- | Folds for byte streams
+-- | Folds for text streams
 
 module Control.Foldl.Text (
     -- * Folds
