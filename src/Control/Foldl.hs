@@ -45,6 +45,7 @@ module Control.Foldl (
     -- $utilities
     , purely
     , impurely
+    , premap
 
     -- * Folds
     , mconcat
@@ -221,6 +222,15 @@ impurely
     -> r
 impurely f (FoldM step begin done) = f step begin done
 {-# INLINABLE impurely #-}
+
+{-| @(premap f folder)@ returns a new 'Fold' where f is applied at each step
+    @fold (premap f folder) list@ == @fold folder (map f list)@
+-}
+premap :: (a -> b) -> Fold b r -> Fold a r
+premap f (Fold step begin done) = Fold step' begin done
+  where
+    step' x = step x . f
+{-# INLINABLE premap #-}
 
 -- | Fold all values within a container using 'mappend' and 'mempty'
 mconcat :: (Monoid a) => Fold a a
