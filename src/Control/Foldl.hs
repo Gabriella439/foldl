@@ -24,12 +24,6 @@
 >>> L.fold ((,) <$> L.minimum <*> L.maximum) [1..10000000]
 (Just 1,Just 10000000)
 
-    You can also unpack the `Fold` type if you want to extract the individual
-    components of combined folds for use with your own customized folding
-    utilities:
-
-> case ((/) <$> L.sum <*> L.genericLength) of
->     L.Foldl step begin done -> ...
 -}
 
 {-# LANGUAGE ExistentialQuantification, RankNTypes #-}
@@ -42,12 +36,6 @@ module Control.Foldl (
     -- * Folding
     , fold
     , foldM
-
-    -- * Utilities
-    -- $utilities
-    , purely
-    , impurely
-    , premap
 
     -- * Folds
     , mconcat
@@ -78,6 +66,12 @@ module Control.Foldl (
     -- * Container folds
     , list
     , vector
+
+    -- * Utilities
+    -- $utilities
+    , purely
+    , impurely
+    , premap
 
     -- * Re-exports
     -- $reexports
@@ -195,50 +189,6 @@ foldM (FoldM step begin done) as0 = do
         x' <- step x a
         k $! x'
 {-# INLINE foldM #-}
-
-{- $utilities
-    'purely' and 'impurely' allow you to write folds compatible with the @foldl@
-    library without incurring a @foldl@ dependency.  Write your fold to accept
-    three parameters corresponding to the step function, initial
-    accumulator, and extraction function and then users can upgrade your
-    function to accept a 'Fold' or 'FoldM' using the 'purely' or 'impurely'
-    combinators.
-
-    For example, the @pipes@ library implements a @foldM@ function in
-    @Pipes.Prelude@ with the following type:
-
-> foldM
->     :: (Monad m)
->     => (x -> a -> m x) -> m x -> (x -> m b) -> Producer a m () -> m b
-
-    @foldM@ is set up so that you can wrap it with 'impurely' to accept a
-    'FoldM' instead:
-
-> impurely foldM :: (Monad m) => FoldM m a b -> Producer a m () -> m b
--}
-
--- | Upgrade a fold to accept the 'Fold' type
-purely :: (forall x . (x -> a -> x) -> x -> (x -> b) -> r) -> Fold a b -> r
-purely f (Fold step begin done) = f step begin done
-{-# INLINABLE purely #-}
-
--- | Upgrade a monadic fold to accept the 'FoldM' type
-impurely
-    :: (Monad m)
-    => (forall x . (x -> a -> m x) -> m x -> (x -> m b) -> r)
-    -> FoldM m a b
-    -> r
-impurely f (FoldM step begin done) = f step begin done
-{-# INLINABLE impurely #-}
-
-{-| @(premap f folder)@ returns a new 'Fold' where f is applied at each step
-    @fold (premap f folder) list@ == @fold folder (map f list)@
--}
-premap :: (a -> b) -> Fold b r -> Fold a r
-premap f (Fold step begin done) = Fold step' begin done
-  where
-    step' x = step x . f
-{-# INLINABLE premap #-}
 
 -- | Fold all values within a container using 'mappend' and 'mempty'
 mconcat :: (Monoid a) => Fold a a
@@ -431,6 +381,50 @@ vector = FoldM step begin done
         v <- V.unsafeFreeze mv
         return (V.unsafeTake idx v)
 {-# INLINABLE vector #-}
+
+{- $utilities
+    'purely' and 'impurely' allow you to write folds compatible with the @foldl@
+    library without incurring a @foldl@ dependency.  Write your fold to accept
+    three parameters corresponding to the step function, initial
+    accumulator, and extraction function and then users can upgrade your
+    function to accept a 'Fold' or 'FoldM' using the 'purely' or 'impurely'
+    combinators.
+
+    For example, the @pipes@ library implements a @foldM@ function in
+    @Pipes.Prelude@ with the following type:
+
+> foldM
+>     :: (Monad m)
+>     => (x -> a -> m x) -> m x -> (x -> m b) -> Producer a m () -> m b
+
+    @foldM@ is set up so that you can wrap it with 'impurely' to accept a
+    'FoldM' instead:
+
+> impurely foldM :: (Monad m) => FoldM m a b -> Producer a m () -> m b
+-}
+
+-- | Upgrade a fold to accept the 'Fold' type
+purely :: (forall x . (x -> a -> x) -> x -> (x -> b) -> r) -> Fold a b -> r
+purely f (Fold step begin done) = f step begin done
+{-# INLINABLE purely #-}
+
+-- | Upgrade a monadic fold to accept the 'FoldM' type
+impurely
+    :: (Monad m)
+    => (forall x . (x -> a -> m x) -> m x -> (x -> m b) -> r)
+    -> FoldM m a b
+    -> r
+impurely f (FoldM step begin done) = f step begin done
+{-# INLINABLE impurely #-}
+
+{-| @(premap f folder)@ returns a new 'Fold' where f is applied at each step
+    @fold (premap f folder) list@ == @fold folder (map f list)@
+-}
+premap :: (a -> b) -> Fold b r -> Fold a r
+premap f (Fold step begin done) = Fold step' begin done
+  where
+    step' x = step x . f
+{-# INLINABLE premap #-}
 
 {- $reexports
     @Control.Monad.Primitive@ re-exports the 'PrimMonad' type class
