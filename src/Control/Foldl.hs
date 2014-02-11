@@ -37,8 +37,10 @@
 module Control.Foldl (
     -- * Fold Types
       Fold(..)
-    , fold
     , FoldM(..)
+
+    -- * Folding
+    , fold
     , foldM
 
     -- * Utilities
@@ -118,17 +120,6 @@ import Prelude hiding
 -}
 data Fold a b = forall x . Fold (x -> a -> x) x (x -> b)
 
-{-| Apply a strict left 'Fold' to a 'Foldable' container
-
-    Much slower than 'fold' on lists because 'Foldable' operations currently do
-    not trigger @build/foldr@ fusion
--}
-fold :: (Foldable f) => Fold a b -> f a -> b
-fold (Fold step begin done) as = F.foldr step' done as begin
-  where
-    step' x k z = k $! step z x
-{-# INLINE fold #-}
-
 data Pair a b = Pair !a !b
 
 instance Functor (Fold a) where
@@ -186,6 +177,13 @@ instance (Monoid b, Monad m) => Monoid (FoldM m a b) where
     {-# INLINABLE mempty #-}
     mappend = liftA2 mappend
     {-# INLINABLE mappend #-}
+
+-- | Apply a strict left 'Fold' to a 'Foldable' container
+fold :: (Foldable f) => Fold a b -> f a -> b
+fold (Fold step begin done) as = F.foldr step' done as begin
+  where
+    step' x k z = k $! step z x
+{-# INLINE fold #-}
 
 -- | Like 'fold', but monadic
 foldM :: (Foldable f, Monad m) => FoldM m a b -> f a -> m b

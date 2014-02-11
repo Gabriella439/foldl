@@ -1,8 +1,11 @@
 -- | Folds for text streams
 
 module Control.Foldl.Text (
+    -- * Folding
+      fold
+
     -- * Folds
-      head
+    , head
     , last
     , null
     , length
@@ -28,8 +31,14 @@ import Control.Foldl.Internal (Maybe'(..), lazy, strict, Either'(..), hush)
 import qualified Control.Foldl as L
 import Data.Text (Text)
 import qualified Data.Text as T
+import qualified Data.Text.Lazy as Lazy
 import Prelude hiding (
     head, last, null, length, any, all, maximum, minimum, elem, notElem )
+
+-- | Apply a strict left 'Fold' to lazy text
+fold :: Fold Text a -> Lazy.Text -> a
+fold (L.Fold step begin done) as = done (Lazy.foldlChunks step begin as)
+{-# INLINABLE fold #-}
 
 {-| Get the first character of a text stream or return 'Nothing' if the stream
     is empty

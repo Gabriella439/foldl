@@ -1,8 +1,11 @@
 -- | Folds for byte streams
 
 module Control.Foldl.ByteString (
+    -- * Folding
+      fold
+
     -- * Folds
-      head
+    , head
     , last
     , null
     , length
@@ -29,10 +32,16 @@ import Control.Foldl.Internal (Maybe'(..), lazy, strict, Either'(..), hush)
 import qualified Control.Foldl as L
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as B
+import qualified Data.ByteString.Lazy.Internal as Lazy
 import qualified Data.ByteString.Unsafe as BU
 import Data.Word (Word8)
 import Prelude hiding (
     head, last, null, length, any, all, maximum, minimum, elem, notElem )
+
+-- | Appply a strict left 'Fold' to a lazy bytestring
+fold :: Fold ByteString a -> Lazy.ByteString -> a
+fold (L.Fold step begin done) as = done (Lazy.foldlChunks step begin as)
+{-# INLINABLE fold #-}
 
 {-| Get the first byte of a byte stream or return 'Nothing' if the stream is
     empty
