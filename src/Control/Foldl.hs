@@ -73,16 +73,26 @@ module Control.Foldl (
     , genericLength
     , genericIndex
 
+    -- * Container folds
+    , list
+    , vector
+
     -- * Re-exports
     -- $reexports
+    , module Control.Monad.Primitive
     , module Data.Foldable
+    , module Data.Vector.Generic
     ) where
 
 import Control.Applicative (Applicative(pure, (<*>)),liftA2)
 import Control.Foldl.Internal (Maybe'(..), lazy, Either'(..), hush)
+import Control.Monad.Primitive (PrimMonad)
 import Data.Foldable (Foldable)
 import qualified Data.Foldable as F
 import Data.Monoid (Monoid(mempty, mappend))
+import Data.Vector.Generic (Vector)
+import qualified Data.Vector.Generic as V
+import qualified Data.Vector.Generic.Mutable as M
 import Prelude hiding
     ( head
     , last
@@ -397,6 +407,37 @@ genericIndex i = Fold step (Left' 0) done
         Right' a -> Just a
 {-# INLINABLE genericIndex #-}
 
+-- | Fold all values into a list
+list :: Fold a [a]
+list = Fold (\x a -> x . (a:)) id ($ [])
+{-# INLINABLE list #-}
+
+maxChunkSize :: Int
+maxChunkSize = 8 * 1024 * 1024
+
+-- | Fold all values into a vector
+vector :: (PrimMonad m, Vector v a) => FoldM m a (v a)
+vector = FoldM step begin done
+  where
+    begin = do
+        mv <- M.unsafeNew 10
+        return (Pair mv 0)
+    step (Pair mv idx) a = do
+        let len = M.length mv
+        mv' <- if (idx >= len)
+            then M.unsafeGrow mv (min len maxChunkSize)
+            else return mv
+        M.unsafeWrite mv' idx a
+        return (Pair mv' (idx + 1))
+    done (Pair mv idx) = do
+        v <- V.unsafeFreeze mv
+        return (V.unsafeTake idx v)
+{-# INLINABLE vector #-}
+
 {- $reexports
-    @Data.Foldable@ re-exports the 'Foldable' type
+    @Control.Monad.Primitive@ re-exports the 'PrimMonad' type class
+
+    @Data.Foldable@ re-exports the 'Foldable' type class
+
+    @Data.Vector.Generic@ re-exports the 'Vector' type class
 -}
