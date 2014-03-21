@@ -36,6 +36,7 @@ module Control.Foldl (
     -- * Folding
     , fold
     , foldM
+    , scan
 
     -- * Folds
     , mconcat
@@ -173,10 +174,10 @@ instance (Monoid b, Monad m) => Monoid (FoldM m a b) where
     {-# INLINABLE mappend #-}
 
 -- | Apply a strict left 'Fold' to a 'Foldable' container
-fold :: (Foldable f) => Fold a b -> f a -> b
-fold (Fold step begin done) as = F.foldr step' done as begin
+fold :: Foldable f => Fold a b -> f a -> b
+fold (Fold step begin done) as = F.foldr cons done as begin
   where
-    step' x k z = k $! step z x
+    cons a k x = k $! step x a
 {-# INLINE fold #-}
 
 -- | Like 'fold', but monadic
@@ -189,6 +190,14 @@ foldM (FoldM step begin done) as0 = do
         x' <- step x a
         k $! x'
 {-# INLINE foldM #-}
+
+-- | Convert a strict left 'Fold' into a scan
+scan :: Fold a b -> [a] -> [b]
+scan (Fold step begin done) as = foldr cons nil as begin
+  where
+    nil      x = done x:[]
+    cons a k x = done x:(k $! step x a)
+{-# INLINE scan #-}
 
 -- | Fold all values within a container using 'mappend' and 'mempty'
 mconcat :: (Monoid a) => Fold a a
