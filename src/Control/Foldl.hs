@@ -72,6 +72,8 @@ module Control.Foldl (
     -- $utilities
     , purely
     , impurely
+    , generalize
+    , simplify
     , premap
     , premapM
 
@@ -87,6 +89,7 @@ import Control.Foldl.Internal (Maybe'(..), lazy, Either'(..), hush)
 import Control.Monad.Primitive (PrimMonad)
 import Data.Foldable (Foldable)
 import qualified Data.Foldable as F
+import Data.Functor.Identity (Identity, runIdentity)
 import Data.Monoid (Monoid(mempty, mappend))
 import Data.Vector.Generic (Vector)
 import qualified Data.Vector.Generic as V
@@ -426,6 +429,24 @@ impurely
     -> r
 impurely f (FoldM step begin done) = f step begin done
 {-# INLINABLE impurely #-}
+
+-- | Generalize a `Fold` to a `FoldM`
+generalize :: Monad m => Fold a b -> FoldM m a b
+generalize (Fold step begin done) = FoldM step' begin' done'
+  where
+    step' x a = return (step x a)
+    begin'    = return  begin
+    done' x   = return (done x)
+{-# INLINABLE generalize #-}
+
+-- | Simplify a pure `FoldM` to a `Fold`
+simplify :: FoldM Identity a b -> Fold a b
+simplify (FoldM step begin done) = Fold step' begin' done'
+  where
+    step' x a = runIdentity (step x a)
+    begin'    = runIdentity  begin
+    done' x   = runIdentity (done x)
+{-# INLINABLE simplify #-}
 
 {-| @(premap f folder)@ returns a new 'Fold' where f is applied at each step
 
