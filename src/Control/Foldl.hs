@@ -73,6 +73,7 @@ module Control.Foldl (
     , purely
     , impurely
     , premap
+    , premapM
 
     -- * Re-exports
     -- $reexports
@@ -140,7 +141,7 @@ instance Monoid b => Monoid (Fold a b) where
 -- | Like 'Fold', but monadic
 data FoldM m a b = forall x . FoldM (x -> a -> m x) (m x) (x -> m b)
 
-instance (Monad m) => Functor (FoldM m a) where
+instance Monad m => Functor (FoldM m a) where
     fmap f (FoldM step start done) = FoldM step start done'
       where
         done' x = do
@@ -148,7 +149,7 @@ instance (Monad m) => Functor (FoldM m a) where
             return $! f b
     {-# INLINABLE fmap #-}
 
-instance (Monad m) => Applicative (FoldM m a) where
+instance Monad m => Applicative (FoldM m a) where
     pure b = FoldM (\() _ -> return ()) (return ()) (\() -> return b)
     {-# INLINABLE pure #-}
     (FoldM stepL beginL doneL) <*> (FoldM stepR beginR doneR) =
@@ -200,12 +201,12 @@ scan (Fold step begin done) as = foldr cons nil as begin
 {-# INLINE scan #-}
 
 -- | Fold all values within a container using 'mappend' and 'mempty'
-mconcat :: (Monoid a) => Fold a a
+mconcat :: Monoid a => Fold a a
 mconcat = Fold mappend mempty id
 {-# INLINABLE mconcat #-}
 
 -- | Convert a \"@foldMap@\" to a 'Fold'
-foldMap :: (Monoid w) => (a -> w) -> (w -> b) -> Fold a b
+foldMap :: Monoid w => (a -> w) -> (w -> b) -> Fold a b
 foldMap to from = Fold (\x a -> mappend x (to a)) mempty from
 {-# INLINABLE foldMap #-}
 
@@ -267,17 +268,17 @@ any predicate = Fold (\x a -> x || predicate a) False id
 {-# INLINABLE any #-}
 
 -- | Computes the sum of all elements
-sum :: (Num a) => Fold a a
+sum :: Num a => Fold a a
 sum = Fold (+) 0 id
 {-# INLINABLE sum #-}
 
 -- | Computes the product all elements
-product :: (Num a) => Fold a a
+product :: Num a => Fold a a
 product = Fold (*) 1 id
 {-# INLINABLE product #-}
 
 -- | Computes the maximum element
-maximum :: (Ord a) => Fold a (Maybe a)
+maximum :: Ord a => Fold a (Maybe a)
 maximum = Fold step Nothing' lazy
   where
     step x a = Just' (case x of
@@ -286,7 +287,7 @@ maximum = Fold step Nothing' lazy
 {-# INLINABLE maximum #-}
 
 -- | Computes the minimum element
-minimum :: (Ord a) => Fold a (Maybe a)
+minimum :: Ord a => Fold a (Maybe a)
 minimum = Fold step Nothing' lazy
   where
     step x a = Just' (case x of
@@ -297,14 +298,14 @@ minimum = Fold step Nothing' lazy
 {-| @(elem a)@ returns 'True' if the container has an element equal to @a@,
     'False' otherwise
 -}
-elem :: (Eq a) => a -> Fold a Bool
+elem :: Eq a => a -> Fold a Bool
 elem a = any (a ==)
 {-# INLINABLE elem #-}
 
 {-| @(notElem a)@ returns 'False' if the container has an element equal to @a@,
     'True' otherwise
 -}
-notElem :: (Eq a) => a -> Fold a Bool
+notElem :: Eq a => a -> Fold a Bool
 notElem a = all (a /=)
 {-# INLINABLE notElem #-}
 
@@ -329,7 +330,7 @@ index = genericIndex
 {-| @(elemIndex a)@ returns the index of the first element that equals @a@, or
     'Nothing' if no element matches
 -}
-elemIndex :: (Eq a) => a -> Fold a (Maybe Int)
+elemIndex :: Eq a => a -> Fold a (Maybe Int)
 elemIndex a = findIndex (a ==)
 {-# INLINABLE elemIndex #-}
 
@@ -348,12 +349,12 @@ findIndex predicate = Fold step (Left' 0) hush
 {-# INLINABLE findIndex #-}
 
 -- | Like 'length', except with a more general 'Num' return value
-genericLength :: (Num b) => Fold a b
+genericLength :: Num b => Fold a b
 genericLength = Fold (\n _ -> n + 1) 0 id
 {-# INLINABLE genericLength #-}
 
 -- | Like 'index', except with a more general 'Integral' argument
-genericIndex :: (Integral i) => i -> Fold a (Maybe a)
+genericIndex :: Integral i => i -> Fold a (Maybe a)
 genericIndex i = Fold step (Left' 0) done
   where
     step x a = case x of
@@ -403,13 +404,13 @@ vector = FoldM step begin done
     @Pipes.Prelude@ with the following type:
 
 > foldM
->     :: (Monad m)
+>     :: Monad m
 >     => (x -> a -> m x) -> m x -> (x -> m b) -> Producer a m () -> m b
 
     @foldM@ is set up so that you can wrap it with 'impurely' to accept a
     'FoldM' instead:
 
-> impurely foldM :: (Monad m) => FoldM m a b -> Producer a m () -> m b
+> impurely foldM :: Monad m => FoldM m a b -> Producer a m () -> m b
 -}
 
 -- | Upgrade a fold to accept the 'Fold' type
@@ -419,7 +420,7 @@ purely f (Fold step begin done) = f step begin done
 
 -- | Upgrade a monadic fold to accept the 'FoldM' type
 impurely
-    :: (Monad m)
+    :: Monad m
     => (forall x . (x -> a -> m x) -> m x -> (x -> m b) -> r)
     -> FoldM m a b
     -> r
@@ -427,13 +428,25 @@ impurely f (FoldM step begin done) = f step begin done
 {-# INLINABLE impurely #-}
 
 {-| @(premap f folder)@ returns a new 'Fold' where f is applied at each step
-    @fold (premap f folder) list@ == @fold folder (map f list)@
+
+> fold (premap f folder) list = fold folder (map f list)
 -}
 premap :: (a -> b) -> Fold b r -> Fold a r
 premap f (Fold step begin done) = Fold step' begin done
   where
-    step' x = step x . f
+    step' x a = step x (f a)
 {-# INLINABLE premap #-}
+
+{-| @(premapM f folder)@ returns a new 'FoldM' where f is applied to each input
+    element
+
+> foldM (premapM f folder) list = foldM folder (map f list)
+-}
+premapM :: Monad m => (a -> b) -> FoldM m b r -> FoldM m a r
+premapM f (FoldM step begin done) = FoldM step' begin done
+  where
+    step' x a = step x (f a)
+{-# INLINABLE premapM #-}
 
 {- $reexports
     @Control.Monad.Primitive@ re-exports the 'PrimMonad' type class
