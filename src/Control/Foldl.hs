@@ -381,27 +381,27 @@ list = Fold (\x a -> x . (a:)) id ($ [])
 -- |
 -- /O(n^2)/. 
 -- Fold values into a list with duplicates removed,
--- while preserving their first occurrences in a reverse order
+-- while preserving their first occurrences
 nub :: (Eq a) => Fold a [a]
-nub = Fold step ([], []) fin
+nub = Fold step (Pair [] id) fin
   where
-    step (known, result) a = if List.elem a known
-      then (known, result)
-      else (a : known, a : result)
-    fin (_, result) = result
+    step (Pair known r) a = if List.elem a known
+      then Pair known r
+      else Pair (a : known) (r . (a :))
+    fin (Pair _ r) = r []
 {-# INLINABLE nub #-}
 
 -- |
 -- /O(n log n)/.
 -- Fold values into a list with duplicates removed,
--- while preserving their first occurrences in a reverse order
+-- while preserving their first occurrences
 ordNub :: (Ord a) => Fold a [a]
-ordNub = Fold step (Set.empty, []) fin
+ordNub = Fold step (Pair Set.empty id) fin
   where
-    step (s, l) a = if Set.member a s
-      then (s, l)
-      else (Set.insert a s, a : l)
-    fin (_, l) = l
+    step (Pair s r) a = if Set.member a s
+      then Pair s r
+      else Pair (Set.insert a s) (r . (a :))
+    fin (Pair _ r) = r []
 {-# INLINABLE ordNub #-}
 
 -- | Fold values into a set
