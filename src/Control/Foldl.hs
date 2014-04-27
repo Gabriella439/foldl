@@ -68,6 +68,7 @@ module Control.Foldl (
     , list
     , nub
     , ordNub
+    , set
     , vector
 
     -- * Utilities
@@ -402,6 +403,11 @@ ordNub = Fold step (Set.empty, []) fin
       else (Set.insert a s, a : l)
     fin (_, l) = l
 {-# INLINABLE ordNub #-}
+
+-- | Fold values into a set
+set :: (Ord a) => Fold a (Set.Set a)
+set = Fold (flip Set.insert) Set.empty id
+{-# INLINABLE set #-}
 
 maxChunkSize :: Int
 maxChunkSize = 8 * 1024 * 1024
