@@ -67,6 +67,7 @@ module Control.Foldl (
     -- * Container folds
     , list
     , nub
+    , ordNub
     , vector
 
     -- * Utilities
@@ -96,6 +97,7 @@ import Data.Vector.Generic (Vector)
 import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.List as List
+import qualified Data.Set as Set
 import Prelude hiding
     ( head
     , last
@@ -387,6 +389,19 @@ nub = Fold step ([], []) fin
       else (a : known, a : result)
     fin (_, result) = result
 {-# INLINABLE nub #-}
+
+-- |
+-- /O(n log n)/.
+-- Fold values into a list with duplicates removed,
+-- while preserving their first occurrences in a reverse order
+ordNub :: (Ord a) => Fold a [a]
+ordNub = Fold step (Set.empty, []) fin
+  where
+    step (s, l) a = if Set.member a s
+      then (s, l)
+      else (Set.insert a s, a : l)
+    fin (_, l) = l
+{-# INLINABLE ordNub #-}
 
 maxChunkSize :: Int
 maxChunkSize = 8 * 1024 * 1024
