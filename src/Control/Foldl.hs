@@ -66,6 +66,7 @@ module Control.Foldl (
 
     -- * Container folds
     , list
+    , nub
     , vector
 
     -- * Utilities
@@ -94,6 +95,7 @@ import Data.Monoid (Monoid(mempty, mappend))
 import Data.Vector.Generic (Vector)
 import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Generic.Mutable as M
+import qualified Data.List as List
 import Prelude hiding
     ( head
     , last
@@ -372,6 +374,19 @@ genericIndex i = Fold step (Left' 0) done
 list :: Fold a [a]
 list = Fold (\x a -> x . (a:)) id ($ [])
 {-# INLINABLE list #-}
+
+-- |
+-- /O(n^2)/. 
+-- Fold values into a list with duplicates removed,
+-- while preserving their first occurrences in a reverse order
+nub :: (Eq a) => Fold a [a]
+nub = Fold step ([], []) fin
+  where
+    step (known, result) a = if List.elem a known
+      then (known, result)
+      else (a : known, a : result)
+    fin (_, result) = result
+{-# INLINABLE nub #-}
 
 maxChunkSize :: Int
 maxChunkSize = 8 * 1024 * 1024
