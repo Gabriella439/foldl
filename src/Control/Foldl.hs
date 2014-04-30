@@ -66,6 +66,9 @@ module Control.Foldl (
 
     -- * Container folds
     , list
+    , nub
+    , ordNub
+    , set
     , vector
 
     -- * Utilities
@@ -94,6 +97,8 @@ import Data.Monoid (Monoid(mempty, mappend))
 import Data.Vector.Generic (Vector)
 import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Generic.Mutable as M
+import qualified Data.List as List
+import qualified Data.Set as Set
 import Prelude hiding
     ( head
     , last
@@ -372,6 +377,37 @@ genericIndex i = Fold step (Left' 0) done
 list :: Fold a [a]
 list = Fold (\x a -> x . (a:)) id ($ [])
 {-# INLINABLE list #-}
+
+-- |
+-- /O(n^2)/. 
+-- Fold values into a list with duplicates removed,
+-- while preserving their first occurrences
+nub :: (Eq a) => Fold a [a]
+nub = Fold step (Pair [] id) fin
+  where
+    step (Pair known r) a = if List.elem a known
+      then Pair known r
+      else Pair (a : known) (r . (a :))
+    fin (Pair _ r) = r []
+{-# INLINABLE nub #-}
+
+-- |
+-- /O(n log n)/.
+-- Fold values into a list with duplicates removed,
+-- while preserving their first occurrences
+ordNub :: (Ord a) => Fold a [a]
+ordNub = Fold step (Pair Set.empty id) fin
+  where
+    step (Pair s r) a = if Set.member a s
+      then Pair s r
+      else Pair (Set.insert a s) (r . (a :))
+    fin (Pair _ r) = r []
+{-# INLINABLE ordNub #-}
+
+-- | Fold values into a set
+set :: (Ord a) => Fold a (Set.Set a)
+set = Fold (flip Set.insert) Set.empty id
+{-# INLINABLE set #-}
 
 maxChunkSize :: Int
 maxChunkSize = 8 * 1024 * 1024
