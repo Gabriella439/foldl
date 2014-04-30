@@ -286,7 +286,7 @@ maximum = Fold step Nothing' lazy
   where
     step x a = Just' (case x of
         Nothing' -> a
-        Just' a' -> max a a')
+        Just' a' -> max a' a)
 {-# INLINABLE maximum #-}
 
 -- | Computes the minimum element
@@ -295,7 +295,7 @@ minimum = Fold step Nothing' lazy
   where
     step x a = Just' (case x of
         Nothing' -> a
-        Just' a' -> min a a')
+        Just' a' -> min a' a)
 {-# INLINABLE minimum #-}
 
 {-| @(elem a)@ returns 'True' if the container has an element equal to @a@,
