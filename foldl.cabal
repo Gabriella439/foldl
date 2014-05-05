@@ -25,7 +25,7 @@ Library
         bytestring   >= 0.9.2.1  && < 0.11,
         primitive                   < 0.6 ,
         text         >= 0.11.2.0 && < 1.2 ,
-        transformers >= 0.2.0.0  && < 0.4 ,
+        transformers >= 0.2.0.0  && < 0.5 ,
         vector       >= 0.7      && < 0.11,
         containers                  < 0.6
     Exposed-Modules:
