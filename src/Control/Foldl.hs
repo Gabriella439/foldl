@@ -26,7 +26,7 @@
 
 -}
 
-{-# LANGUAGE ExistentialQuantification, RankNTypes #-}
+{-# LANGUAGE ExistentialQuantification, RankNTypes, Trustworthy #-}
 
 module Control.Foldl (
     -- * Fold Types
