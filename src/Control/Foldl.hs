@@ -43,6 +43,7 @@ module Control.Foldl (
     , foldMap
     , head
     , last
+    , latest
     , null
     , length
     , and
@@ -235,6 +236,13 @@ head = Fold step Nothing' lazy
 last :: Fold a (Maybe a)
 last = Fold (\_ -> Just') Nothing' lazy
 {-# INLINABLE last #-}
+
+{-| Get the last element of a container or return a default value if the container
+    is empty
+-}
+latest :: a -> Fold a a
+latest a = Fold (\_ a' -> a') a id
+{-# INLINABLE latest #-}
 
 -- | Returns 'True' if the container is empty, 'False' otherwise
 null :: Fold a Bool
