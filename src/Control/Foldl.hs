@@ -90,10 +90,12 @@ module Control.Foldl (
 
 import Control.Applicative (Applicative(pure, (<*>)),liftA2)
 import Control.Foldl.Internal (Maybe'(..), lazy, Either'(..), hush)
+import Control.Monad (liftM)
 import Control.Monad.Primitive (PrimMonad)
 import Data.Foldable (Foldable)
 import qualified Data.Foldable as F
 import Data.Functor.Identity (Identity, runIdentity)
+import Data.Profunctor
 import Data.Monoid (Monoid(mempty, mappend))
 import Data.Vector.Generic (Vector)
 import qualified Data.Vector.Generic as V
@@ -131,6 +133,11 @@ instance Functor (Fold a) where
     fmap f (Fold step begin done) = Fold step begin (f . done)
     {-# INLINABLE fmap #-}
 
+instance Profunctor Fold where
+    dimap f g (Fold step begin done) =
+        Fold (rmap (lmap f) step) begin (rmap g done)
+    {-# INLINABLE dimap #-}
+
 instance Applicative (Fold a) where
     pure b    = Fold (\() _ -> ()) () (\() -> b)
     {-# INLINABLE pure #-}
@@ -157,6 +164,11 @@ instance Monad m => Functor (FoldM m a) where
             b <- done x
             return $! f b
     {-# INLINABLE fmap #-}
+
+instance Monad m => Profunctor (FoldM m) where
+    dimap f g (FoldM step begin done) =
+        FoldM (rmap (lmap f) step) begin (rmap (liftM g) done)
+    {-# INLINABLE dimap #-}
 
 instance Monad m => Applicative (FoldM m a) where
     pure b = FoldM (\() _ -> return ()) (return ()) (\() -> return b)
