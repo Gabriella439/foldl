@@ -80,6 +80,8 @@ module Control.Foldl (
     , simplify
     , premap
     , premapM
+    , pretraverse
+    , pretraverseM
 
     -- * Re-exports
     -- $reexports
@@ -90,11 +92,13 @@ module Control.Foldl (
 
 import Control.Applicative (Applicative(pure, (<*>)),liftA2)
 import Control.Foldl.Internal (Maybe'(..), lazy, Either'(..), hush)
+import Control.Monad ((<=<))
 import Control.Monad.Primitive (PrimMonad)
 import Data.Foldable (Foldable)
 import qualified Data.Foldable as F
+import Data.Functor.Constant (Constant(Constant, getConstant))
 import Data.Functor.Identity (Identity, runIdentity)
-import Data.Monoid (Monoid(mempty, mappend))
+import Data.Monoid (Monoid(mempty, mappend), Endo(Endo, appEndo))
 import Data.Vector.Generic (Vector)
 import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Generic.Mutable as M
@@ -472,7 +476,12 @@ impurely
 impurely f (FoldM step begin done) = f step begin done
 {-# INLINABLE impurely #-}
 
--- | Generalize a `Fold` to a `FoldM`
+{-| Generalize a `Fold` to a `FoldM`
+
+> generalize (pure r) = pure r
+>
+> generalize (f <*> x) = generalize f <*> generalize x
+-}
 generalize :: Monad m => Fold a b -> FoldM m a b
 generalize (Fold step begin done) = FoldM step' begin' done'
   where
@@ -481,7 +490,12 @@ generalize (Fold step begin done) = FoldM step' begin' done'
     done' x   = return (done x)
 {-# INLINABLE generalize #-}
 
--- | Simplify a pure `FoldM` to a `Fold`
+{-| Simplify a pure `FoldM` to a `Fold`
+
+> simplify (pure r) = pure r
+>
+> simplify (f <*> x) = simplify f <*> simplify x
+-}
 simplify :: FoldM Identity a b -> Fold a b
 simplify (FoldM step begin done) = Fold step' begin' done'
   where
@@ -493,6 +507,14 @@ simplify (FoldM step begin done) = Fold step' begin' done'
 {-| @(premap f folder)@ returns a new 'Fold' where f is applied at each step
 
 > fold (premap f folder) list = fold folder (map f list)
+
+> premap id = id
+>
+> premap (f . g) = premap g . premap f
+
+> premap k (pure r) = pure r
+>
+> premap k (f <*> x) = premap k f <*> premap k x
 -}
 premap :: (a -> b) -> Fold b r -> Fold a r
 premap f (Fold step begin done) = Fold step' begin done
@@ -504,12 +526,62 @@ premap f (Fold step begin done) = Fold step' begin done
     element
 
 > foldM (premapM f folder) list = foldM folder (map f list)
+
+> premapM id = id
+>
+> premapM (f . g) = premap g . premap f
+
+> premapM k (pure r) = pure r
+>
+> premapM k (f <*> x) = premapM k f <*> premapM k x
 -}
 premapM :: Monad m => (a -> b) -> FoldM m b r -> FoldM m a r
 premapM f (FoldM step begin done) = FoldM step' begin done
   where
     step' x a = step x (f a)
 {-# INLINABLE premapM #-}
+
+type Traversal' a b = forall f . Applicative f => (b -> f b) -> a -> f a
+
+{-| @(pretraverse t folder)@ traverses each incoming element using @Traversal'@
+    @t@ and folds every target of the @Traversal'@
+
+> pretraverse id = id
+>
+> pretraverse (f . g) = pretraverse f . pretraverse g
+
+> pretraverse t (pure r) = pure r
+>
+> pretraverse t (f <*> x) = pretraverse t f <*> pretraverse t x
+-}
+pretraverse :: Traversal' a b -> Fold b r -> Fold a r
+pretraverse k (Fold step begin done) = Fold step' begin done
+  where
+    step' = flip (appEndo . getConstant . k (Constant . Endo . flip step))
+{-# INLINABLE pretraverse #-}
+
+newtype EndoM m a = EndoM { appEndoM :: a -> m a }
+
+instance Monad m => Monoid (EndoM m a) where
+    mempty = EndoM return
+    mappend (EndoM f) (EndoM g) = EndoM (f <=< g)
+
+{-| @(pretraverseM t folder)@ traverses each incoming element using @Traversal'@
+    @t@ and folds every target of the @Traversal'@
+
+> pretraverseM id = id
+>
+> pretraverseM (f . g) = pretraverseM f . pretraverseM g
+
+> pretraverseM t (pure r) = pure r
+>
+> pretraverseM t (f <*> x) = pretraverseM t f <*> pretraverseM t x
+-}
+pretraverseM :: Monad m => Traversal' a b -> FoldM m b r -> FoldM m a r
+pretraverseM k (FoldM step begin done) = FoldM step' begin done
+  where
+    step' = flip (appEndoM . getConstant . k (Constant . EndoM . flip step))
+{-# INLINABLE pretraverseM #-}
 
 {- $reexports
     @Control.Monad.Primitive@ re-exports the 'PrimMonad' type class
