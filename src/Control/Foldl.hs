@@ -151,6 +151,93 @@ instance Monoid b => Monoid (Fold a b) where
     mappend = liftA2 mappend
     {-# INLINABLE mappend #-}
 
+instance Num b => Num (Fold a b) where
+    fromInteger = pure . fromInteger
+    {-# INLINABLE fromInteger #-}
+
+    negate = fmap negate
+    {-# INLINABLE negate #-}
+
+    abs = fmap abs
+    {-# INLINABLE abs #-}
+
+    signum = fmap signum
+    {-# INLINABLE signum #-}
+
+    (+) = liftA2 (+)
+    {-# INLINABLE (+) #-}
+
+    (*) = liftA2 (*)
+    {-# INLINABLE (*) #-}
+
+    (-) = liftA2 (-)
+    {-# INLINABLE (-) #-}
+
+instance Fractional b => Fractional (Fold a b) where
+    fromRational = pure . fromRational
+    {-# INLINABLE fromRational #-}
+
+    recip = fmap recip
+    {-# INLINABLE recip #-}
+
+    (/) = liftA2 (/)
+    {-# INLINABLE (/) #-}
+
+instance Floating b => Floating (Fold a b) where
+    pi = pure pi
+    {-# INLINABLE pi #-}
+
+    exp = fmap exp
+    {-# INLINABLE exp #-}
+
+    sqrt = fmap sqrt
+    {-# INLINABLE sqrt #-}
+
+    log = fmap log
+    {-# INLINABLE log #-}
+
+    sin = fmap sin
+    {-# INLINABLE sin #-}
+
+    tan = fmap tan
+    {-# INLINABLE tan #-}
+
+    cos = fmap cos
+    {-# INLINABLE cos #-}
+
+    asin = fmap sin
+    {-# INLINABLE asin #-}
+
+    atan = fmap atan
+    {-# INLINABLE atan #-}
+
+    acos = fmap acos
+    {-# INLINABLE acos #-}
+
+    sinh = fmap sinh
+    {-# INLINABLE sinh #-}
+
+    tanh = fmap tanh
+    {-# INLINABLE tanh #-}
+
+    cosh = fmap cosh
+    {-# INLINABLE cosh #-}
+
+    asinh = fmap asinh
+    {-# INLINABLE asinh #-}
+
+    atanh = fmap atanh
+    {-# INLINABLE atanh #-}
+
+    acosh = fmap acosh
+    {-# INLINABLE acosh #-}
+
+    (**) = liftA2 (**)
+    {-# INLINABLE (**) #-}
+
+    logBase = liftA2 logBase
+    {-# INLINABLE logBase #-}
+
 -- | Like 'Fold', but monadic
 data FoldM m a b = forall x . FoldM (x -> a -> m x) (m x) (x -> m b)
 
@@ -186,6 +273,93 @@ instance (Monoid b, Monad m) => Monoid (FoldM m a b) where
     {-# INLINABLE mempty #-}
     mappend = liftA2 mappend
     {-# INLINABLE mappend #-}
+
+instance (Monad m, Num b) => Num (FoldM m a b) where
+    fromInteger = pure . fromInteger
+    {-# INLINABLE fromInteger #-}
+
+    negate = fmap negate
+    {-# INLINABLE negate #-}
+
+    abs = fmap abs
+    {-# INLINABLE abs #-}
+
+    signum = fmap signum
+    {-# INLINABLE signum #-}
+
+    (+) = liftA2 (+)
+    {-# INLINABLE (+) #-}
+
+    (*) = liftA2 (*)
+    {-# INLINABLE (*) #-}
+
+    (-) = liftA2 (-)
+    {-# INLINABLE (-) #-}
+
+instance (Monad m, Fractional b) => Fractional (FoldM m a b) where
+    fromRational = pure . fromRational
+    {-# INLINABLE fromRational #-}
+
+    recip = fmap recip
+    {-# INLINABLE recip #-}
+
+    (/) = liftA2 (/)
+    {-# INLINABLE (/) #-}
+
+instance (Monad m, Floating b) => Floating (FoldM m a b) where
+    pi = pure pi
+    {-# INLINABLE pi #-}
+
+    exp = fmap exp
+    {-# INLINABLE exp #-}
+
+    sqrt = fmap sqrt
+    {-# INLINABLE sqrt #-}
+
+    log = fmap log
+    {-# INLINABLE log #-}
+
+    sin = fmap sin
+    {-# INLINABLE sin #-}
+
+    tan = fmap tan
+    {-# INLINABLE tan #-}
+
+    cos = fmap cos
+    {-# INLINABLE cos #-}
+
+    asin = fmap sin
+    {-# INLINABLE asin #-}
+
+    atan = fmap atan
+    {-# INLINABLE atan #-}
+
+    acos = fmap acos
+    {-# INLINABLE acos #-}
+
+    sinh = fmap sinh
+    {-# INLINABLE sinh #-}
+
+    tanh = fmap tanh
+    {-# INLINABLE tanh #-}
+
+    cosh = fmap cosh
+    {-# INLINABLE cosh #-}
+
+    asinh = fmap asinh
+    {-# INLINABLE asinh #-}
+
+    atanh = fmap atanh
+    {-# INLINABLE atanh #-}
+
+    acosh = fmap acosh
+    {-# INLINABLE acosh #-}
+
+    (**) = liftA2 (**)
+    {-# INLINABLE (**) #-}
+
+    logBase = liftA2 logBase
+    {-# INLINABLE logBase #-}
 
 -- | Apply a strict left 'Fold' to a 'Foldable' container
 fold :: Foldable f => Fold a b -> f a -> b
