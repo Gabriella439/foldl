@@ -79,7 +79,7 @@ null = L.Fold step True id
 {-# INLINABLE null #-}
 
 -- | Return the length of the byte stream in bytes
-length :: (Num n) => Fold ByteString n
+length :: Num n => Fold ByteString n
 length = L.Fold (\n bs -> n + fromIntegral (B.length bs)) 0 id
 {-# INLINABLE length #-}
 
@@ -149,7 +149,7 @@ find predicate = L.Fold step Nothing' lazy
 {-| @(index n)@ returns the @n@th byte of the byte stream, or 'Nothing' if the
     stream has an insufficient number of bytes
 -}
-index :: (Integral n) => n -> Fold ByteString (Maybe Word8)
+index :: Integral n => n -> Fold ByteString (Maybe Word8)
 index i = L.Fold step (Left' (fromIntegral i)) hush
   where
     step x bs = case x of
@@ -164,14 +164,14 @@ index i = L.Fold step (Left' (fromIntegral i)) hush
 {-| @(elemIndex w8)@ returns the index of the first byte that equals @w8@, or
     'Nothing' if no byte matches
 -}
-elemIndex :: (Num n) => Word8 -> Fold ByteString (Maybe n)
+elemIndex :: Num n => Word8 -> Fold ByteString (Maybe n)
 elemIndex w8 = findIndex (w8 ==)
 {-# INLINABLE elemIndex #-}
 
 {-| @(findIndex predicate)@ returns the index of the first byte that satisfies
     the predicate, or 'Nothing' if no byte satisfies the predicate
 -}
-findIndex :: (Num n) => (Word8 -> Bool) -> Fold ByteString (Maybe n)
+findIndex :: Num n => (Word8 -> Bool) -> Fold ByteString (Maybe n)
 findIndex predicate = L.Fold step (Left' 0) hush
   where
     step x bs = case x of

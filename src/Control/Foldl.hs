@@ -138,6 +138,7 @@ instance Functor (Fold a) where
 instance Applicative (Fold a) where
     pure b    = Fold (\() _ -> ()) () (\() -> b)
     {-# INLINABLE pure #-}
+
     (Fold stepL beginL doneL) <*> (Fold stepR beginR doneR) =
         let step (Pair xL xR) a = Pair (stepL xL a) (stepR xR a)
             begin = Pair beginL beginR
@@ -148,6 +149,7 @@ instance Applicative (Fold a) where
 instance Monoid b => Monoid (Fold a b) where
     mempty = pure mempty
     {-# INLINABLE mempty #-}
+
     mappend = liftA2 mappend
     {-# INLINABLE mappend #-}
 
@@ -252,6 +254,7 @@ instance Monad m => Functor (FoldM m a) where
 instance Monad m => Applicative (FoldM m a) where
     pure b = FoldM (\() _ -> return ()) (return ()) (\() -> return b)
     {-# INLINABLE pure #-}
+
     (FoldM stepL beginL doneL) <*> (FoldM stepR beginR doneR) =
         let step (Pair xL xR) a = do
                 xL' <- stepL xL a
@@ -271,6 +274,7 @@ instance Monad m => Applicative (FoldM m a) where
 instance (Monoid b, Monad m) => Monoid (FoldM m a b) where
     mempty = pure mempty
     {-# INLINABLE mempty #-}
+
     mappend = liftA2 mappend
     {-# INLINABLE mappend #-}
 
@@ -589,7 +593,7 @@ eqNub = Fold step (Pair [] id) fin
 {-# INLINABLE eqNub #-}
 
 -- | Fold values into a set
-set :: (Ord a) => Fold a (Set.Set a)
+set :: Ord a => Fold a (Set.Set a)
 set = Fold (flip Set.insert) Set.empty id
 {-# INLINABLE set #-}
 

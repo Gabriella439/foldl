@@ -76,7 +76,7 @@ null = L.Fold step True id
 {-# INLINABLE null #-}
 
 -- | Return the length of the text stream in characters
-length :: (Num n) => Fold Text n
+length :: Num n => Fold Text n
 length = L.Fold (\n txt -> n + fromIntegral (T.length txt)) 0 id
 {-# INLINABLE length #-}
 
@@ -146,7 +146,7 @@ find predicate = L.Fold step Nothing' lazy
 {-| @(index n)@ returns the @n@th character of the text stream, or 'Nothing' if
     the stream has an insufficient number of characters
 -}
-index :: (Integral n) => n -> Fold Text (Maybe Char)
+index :: Integral n => n -> Fold Text (Maybe Char)
 index i = L.Fold step (Left' (fromIntegral i)) hush
   where
     step x txt = case x of
@@ -161,7 +161,7 @@ index i = L.Fold step (Left' (fromIntegral i)) hush
 {-| @(elemIndex c)@ returns the index of the first character that equals @c@,
     or 'Nothing' if no character matches
 -}
-elemIndex :: (Num n) => Char -> Fold Text (Maybe n)
+elemIndex :: Num n => Char -> Fold Text (Maybe n)
 elemIndex c = findIndex (c ==)
 {-# INLINABLE elemIndex #-}
 
@@ -169,7 +169,7 @@ elemIndex c = findIndex (c ==)
     satisfies the predicate, or 'Nothing' if no character satisfies the
     predicate
 -}
-findIndex :: (Num n) => (Char -> Bool) -> Fold Text (Maybe n)
+findIndex :: Num n => (Char -> Bool) -> Fold Text (Maybe n)
 findIndex predicate = L.Fold step (Left' 0) hush
   where
     step x txt = case x of
