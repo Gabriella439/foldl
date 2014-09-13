@@ -19,6 +19,7 @@ module Control.Foldl.Text (
     , index
     , elemIndex
     , findIndex
+    , count
 
     -- * Re-exports
     -- $reexports
@@ -177,6 +178,13 @@ findIndex predicate = L.Fold step (Left' 0) hush
             Just n  -> Right' (m + fromIntegral n)
         _       -> x
 {-# INLINABLE findIndex #-}
+
+-- | @(count c)@ returns the number of times @c@ appears
+count :: Num n => Char -> Fold Text n
+count c = L.Fold step 0 id
+  where
+    step n txt = n + fromIntegral (T.count (T.singleton c) txt)
+{-# INLINABLE count #-}
 
 {- $reexports
     "Control.Foldl" re-exports the 'Fold' type

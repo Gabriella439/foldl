@@ -19,6 +19,7 @@ module Control.Foldl.ByteString (
     , index
     , elemIndex
     , findIndex
+    , count
 
     -- * Re-exports
     -- $reexports
@@ -179,6 +180,13 @@ findIndex predicate = L.Fold step (Left' 0) hush
             Just n  -> Right' (m + fromIntegral n)
         _       -> x
 {-# INLINABLE findIndex #-}
+
+-- | @count w8@ returns the number of times @w8@ appears
+count :: Num n => Word8 -> Fold ByteString n
+count w8 = L.Fold step 0 id
+  where
+    step n bs = n + fromIntegral (B.count w8 bs)
+{-# INLINABLE count #-}
 
 {- $reexports
 
