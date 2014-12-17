@@ -126,8 +126,13 @@ import Prelude hiding
 
     This allows the 'Applicative' instance to assemble derived folds that
     traverse the container only once
+
+    A \''Fold' a b\' processes elements of type __a__ and results in a
+    value of type __b__.
 -}
-data Fold a b = forall x . Fold (x -> a -> x) x (x -> b)
+data Fold a b
+  -- | @Fold @ @ step @ @ initial @ @ extract@
+  = forall x. Fold (x -> a -> x) x (x -> b)
 
 data Pair a b = Pair !a !b
 
@@ -142,7 +147,7 @@ instance Applicative (Fold a) where
     (Fold stepL beginL doneL) <*> (Fold stepR beginR doneR) =
         let step (Pair xL xR) a = Pair (stepL xL a) (stepR xR a)
             begin = Pair beginL beginR
-            done (Pair xL xR) = (doneL xL) (doneR xR)
+            done (Pair xL xR) = doneL xL (doneR xR)
         in  Fold step begin done
     {-# INLINABLE (<*>) #-}
 
@@ -240,8 +245,14 @@ instance Floating b => Floating (Fold a b) where
     logBase = liftA2 logBase
     {-# INLINABLE logBase #-}
 
--- | Like 'Fold', but monadic
-data FoldM m a b = forall x . FoldM (x -> a -> m x) (m x) (x -> m b)
+{-| Like 'Fold', but monadic.
+
+    A \''FoldM' m a b\' processes elements of type __a__ and
+    results in a monadic value of type __m b__.
+-}
+data FoldM m a b =
+  -- | @FoldM @ @ step @ @ initial @ @ extract@
+  forall x . FoldM (x -> a -> m x) (m x) (x -> m b)
 
 instance Monad m => Functor (FoldM m a) where
     fmap f (FoldM step start done) = FoldM step start done'
@@ -398,7 +409,7 @@ mconcat = Fold mappend mempty id
 
 -- | Convert a \"@foldMap@\" to a 'Fold'
 foldMap :: Monoid w => (a -> w) -> (w -> b) -> Fold a b
-foldMap to from = Fold (\x a -> mappend x (to a)) mempty from
+foldMap to = Fold (\x a -> mappend x (to a)) mempty
 {-# INLINABLE foldMap #-}
 
 {-| Get the first element of a container or return 'Nothing' if the container is
@@ -416,7 +427,7 @@ head = Fold step Nothing' lazy
     empty
 -}
 last :: Fold a (Maybe a)
-last = Fold (\_ -> Just') Nothing' lazy
+last = Fold (const Just') Nothing' lazy
 {-# INLINABLE last #-}
 
 {-| Get the last element of a container or return a default value if the container
@@ -514,7 +525,7 @@ find :: (a -> Bool) -> Fold a (Maybe a)
 find predicate = Fold step Nothing' lazy
   where
     step x a = case x of
-        Nothing' -> if (predicate a) then Just' a else Nothing'
+        Nothing' -> if predicate a then Just' a else Nothing'
         _        -> x
 {-# INLINABLE find #-}
 
@@ -556,7 +567,7 @@ genericIndex :: Integral i => i -> Fold a (Maybe a)
 genericIndex i = Fold step (Left' 0) done
   where
     step x a = case x of
-        Left'  j -> if (i == j) then Right' a else Left' (j + 1)
+        Left'  j -> if i == j then Right' a else Left' (j + 1)
         _        -> x
     done x = case x of
         Left'  _ -> Nothing
@@ -609,7 +620,7 @@ vector = FoldM step begin done
         return (Pair mv 0)
     step (Pair mv idx) a = do
         let len = M.length mv
-        mv' <- if (idx >= len)
+        mv' <- if idx >= len
             then M.unsafeGrow mv (min len maxChunkSize)
             else return mv
         M.unsafeWrite mv' idx a
@@ -686,6 +697,12 @@ simplify (FoldM step begin done) = Fold step' begin' done'
 
 > fold (premap f folder) list = fold folder (map f list)
 
+>>> fold (premap Sum mconcat) [1..10]
+Sum {getSum = 55}
+
+>>> fold mconcat (map Sum [1..10])
+Sum {getSum = 55}
+
 > premap id = id
 >
 > premap (f . g) = premap g . premap f
@@ -723,6 +740,18 @@ type Traversal' a b = forall f . Applicative f => (b -> f b) -> a -> f a
 
 {-| @(pretraverse t folder)@ traverses each incoming element using @Traversal'@
     @t@ and folds every target of the @Traversal'@
+
+>>> fold (pretraverse traverse sum) [[1..5],[6..10]]
+55
+
+>>> fold (pretraverse (traverse.traverse) sum) [[Nothing, Just 2, Just 7],[Just 13, Nothing, Just 20]]
+42
+
+>>> fold (pretraverse (filtered even) sum) [1,3,5,7,21,21]
+42
+
+>>> fold (pretraverse _2 mconcat) [(1,"Hello "),(2,"World"),(3,"!")]
+"Hello World!"
 
 > pretraverse id = id
 >
