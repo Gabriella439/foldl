@@ -37,6 +37,7 @@ module Control.Foldl (
     , fold
     , foldM
     , scan
+    , scannify
 
     -- * Folds
     , mconcat
