@@ -104,6 +104,7 @@ import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.List as List
 import qualified Data.Set as Set
+import qualified Data.DList as DList
 import Prelude hiding
     ( head
     , last
@@ -401,6 +402,15 @@ scan (Fold step begin done) as = foldr cons nil as begin
     nil      x = done x:[]
     cons a k x = done x:(k $! step x a)
 {-# INLINE scan #-}
+
+-- | Convert a fold into a fold which produces all intermediate values in a list
+scannify :: Fold a b -> Fold a [b]
+scannify (Fold step begin done) =
+   Fold (\(x, list) a ->
+           let next = step x a 
+           in (next, DList.snoc list (done next)))
+        (begin, DList.singleton (done begin))
+        (DList.toList . snd)
 
 -- | Fold all values within a container using 'mappend' and 'mempty'
 mconcat :: Monoid a => Fold a a
