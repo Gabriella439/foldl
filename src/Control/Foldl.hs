@@ -39,8 +39,8 @@ module Control.Foldl (
     , scan
 
     -- * Folds
-    , mconcat
-    , foldMap
+    , Control.Foldl.mconcat
+    , Control.Foldl.foldMap
     , head
     , last
     , lastDef
