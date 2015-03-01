@@ -67,6 +67,7 @@ module Control.Foldl (
 
     -- * Container folds
     , list
+    , revList
     , nub
     , eqNub
     , set
@@ -578,6 +579,11 @@ genericIndex i = Fold step (Left' 0) done
 list :: Fold a [a]
 list = Fold (\x a -> x . (a:)) id ($ [])
 {-# INLINABLE list #-}
+
+-- | Fold all values into a list, in reverse order
+revList :: Fold a [a]
+revList = Fold (\x a -> a:x) [] id
+{-# INLINABLE revList #-}
 
 {-| /O(n log n)/.  Fold values into a list with duplicates removed, while
     preserving their first occurrences
