@@ -79,6 +79,7 @@ module Control.Foldl (
     , impurely
     , generalize
     , simplify
+    , _Fold1
     , premap
     , premapM
     , pretraverse
@@ -417,18 +418,14 @@ foldMap to = Fold (\x a -> mappend x (to a)) mempty
     empty
 -}
 head :: Fold a (Maybe a)
-head = Fold step Nothing' lazy
-  where
-    step x a = case x of
-        Nothing' -> Just' a
-        _        -> x
+head = _Fold1 const
 {-# INLINABLE head #-}
 
 {-| Get the last element of a container or return 'Nothing' if the container is
     empty
 -}
 last :: Fold a (Maybe a)
-last = Fold (const Just') Nothing' lazy
+last = _Fold1 (flip const)
 {-# INLINABLE last #-}
 
 {-| Get the last element of a container or return a default value if the container
@@ -489,20 +486,12 @@ product = Fold (*) 1 id
 
 -- | Computes the maximum element
 maximum :: Ord a => Fold a (Maybe a)
-maximum = Fold step Nothing' lazy
-  where
-    step x a = Just' (case x of
-        Nothing' -> a
-        Just' a' -> max a' a)
+maximum = _Fold1 max
 {-# INLINABLE maximum #-}
 
 -- | Computes the minimum element
 minimum :: Ord a => Fold a (Maybe a)
-minimum = Fold step Nothing' lazy
-  where
-    step x a = Just' (case x of
-        Nothing' -> a
-        Just' a' -> min a' a)
+minimum = _Fold1 min
 {-# INLINABLE minimum #-}
 
 {-| @(elem a)@ returns 'True' if the container has an element equal to @a@,
@@ -698,6 +687,18 @@ simplify (FoldM step begin done) = Fold step' begin' done'
     begin'    = runIdentity  begin
     done' x   = runIdentity (done x)
 {-# INLINABLE simplify #-}
+
+{-| @_Fold1 step@ returns a new 'Fold' using just a step function that has the
+same type for the accumulator and the element. The result type is the
+accumulator type wrapped in 'Maybe'. The initial accumulator is retrieved from
+the 'Foldable', the result is 'None' for empty containers.
+ -}
+_Fold1 :: (a -> a -> a) -> Fold a (Maybe a)
+_Fold1 step = Fold step_ Nothing' lazy
+  where
+    step_ mx a = Just' (case mx of
+        Nothing' -> a
+        Just' x -> step x a)
 
 {-| @(premap f folder)@ returns a new 'Fold' where f is applied at each step
 
