@@ -60,6 +60,7 @@ module Control.Foldl (
     , index
     , elemIndex
     , findIndex
+    , random
 
     -- * Generic Folds
     , genericLength
@@ -106,6 +107,7 @@ import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.List as List
 import qualified Data.Set as Set
+import System.Random.MWC (createSystemRandom, uniformR)
 import Prelude hiding
     ( head
     , last
@@ -546,6 +548,25 @@ findIndex predicate = Fold step (Left' 0) hush
             else Left' (i + 1)
         _       -> x
 {-# INLINABLE findIndex #-}
+
+data Pair3 a b c = Pair3 !a !b !c
+
+-- | Pick a random element, using reservoir sampling
+random :: FoldM IO a (Maybe a)
+random = FoldM step begin done
+  where
+    begin = do
+        gen <- createSystemRandom
+        return $! Pair3 gen Nothing' (1 :: Int)
+
+    step (Pair3 gen Nothing'  _) a = return $! Pair3 gen (Just' a) 2
+    step (Pair3 gen (Just' a) m) b = do
+        n <- uniformR (1, m) gen
+        let c = if n == 1 then b else a
+        return $! Pair3 gen (Just' c) (m + 1)
+
+    done (Pair3 _ ma _) = return (lazy ma)
+{-# INLINABLE random #-}
 
 -- | Like 'length', except with a more general 'Num' return value
 genericLength :: Num b => Fold a b
