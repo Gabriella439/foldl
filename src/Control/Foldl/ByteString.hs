@@ -39,7 +39,7 @@ import Data.Word (Word8)
 import Prelude hiding (
     head, last, null, length, any, all, maximum, minimum, elem, notElem )
 
--- | Appply a strict left 'Fold' to a lazy bytestring
+-- | Apply a strict left 'Fold' to a lazy bytestring
 fold :: Fold ByteString a -> Lazy.ByteString -> a
 fold (L.Fold step begin done) as = done (Lazy.foldlChunks step begin as)
 {-# INLINABLE fold #-}
