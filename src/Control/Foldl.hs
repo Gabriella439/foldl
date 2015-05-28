@@ -101,6 +101,7 @@ import Data.Foldable (Foldable)
 import qualified Data.Foldable as F
 import Data.Functor.Constant (Constant(Constant, getConstant))
 import Data.Functor.Identity (Identity, runIdentity)
+import Data.Profunctor
 import Data.Monoid (Monoid(mempty, mappend), Endo(Endo, appEndo))
 import Data.Vector.Generic (Vector)
 import qualified Data.Vector.Generic as V
@@ -143,6 +144,10 @@ data Pair a b = Pair !a !b
 instance Functor (Fold a) where
     fmap f (Fold step begin done) = Fold step begin (f . done)
     {-# INLINABLE fmap #-}
+
+instance Profunctor Fold where
+    lmap = premap
+    rmap = fmap
 
 instance Applicative (Fold a) where
     pure b    = Fold (\() _ -> ()) () (\() -> b)
