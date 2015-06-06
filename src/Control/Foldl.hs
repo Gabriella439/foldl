@@ -84,10 +84,10 @@ module Control.Foldl (
     , premap
     , premapM
     , Handler
-    , pretraverse
+    , handle
     , EndoM(..)
     , HandlerM
-    , pretraverseM
+    , handleM
 
     -- * Re-exports
     -- $reexports
@@ -779,34 +779,38 @@ premapM f (FoldM step begin done) = FoldM step' begin done
 type Handler a b =
     forall x . (b -> Constant (Endo x) b) -> a -> Constant (Endo x) a 
 
-{-| @(pretraverse t folder)@ traverses each incoming element using @Traversal'@
-    @t@ and folds every target of the @Traversal'@
+{-| @(handle t folder)@ transforms the input of a `Fold` using a lens,
+    traversal, or prism:
 
->>> fold (pretraverse traverse sum) [[1..5],[6..10]]
+> handle _1       :: Fold a r -> Fold (a, b) r
+> handle _Left    :: Fold a r -> Fold (Either a b) r
+> handle traverse :: Traversable t => Fold a r -> Fold (t a) r
+
+>>> fold (handle traverse sum) [[1..5],[6..10]]
 55
 
->>> fold (pretraverse (traverse.traverse) sum) [[Nothing, Just 2, Just 7],[Just 13, Nothing, Just 20]]
+>>> fold (handle (traverse.traverse) sum) [[Nothing, Just 2, Just 7],[Just 13, Nothing, Just 20]]
 42
 
->>> fold (pretraverse (filtered even) sum) [1,3,5,7,21,21]
+>>> fold (handle (filtered even) sum) [1,3,5,7,21,21]
 42
 
->>> fold (pretraverse _2 mconcat) [(1,"Hello "),(2,"World"),(3,"!")]
+>>> fold (handle _2 mconcat) [(1,"Hello "),(2,"World"),(3,"!")]
 "Hello World!"
 
-> pretraverse id = id
+> handle id = id
 >
-> pretraverse (f . g) = pretraverse f . pretraverse g
+> handle (f . g) = handle f . handle g
 
-> pretraverse t (pure r) = pure r
+> handle t (pure r) = pure r
 >
-> pretraverse t (f <*> x) = pretraverse t f <*> pretraverse t x
+> handle t (f <*> x) = handle t f <*> handle t x
 -}
-pretraverse :: Handler a b -> Fold b r -> Fold a r
-pretraverse k (Fold step begin done) = Fold step' begin done
+handle :: Handler a b -> Fold b r -> Fold a r
+handle k (Fold step begin done) = Fold step' begin done
   where
     step' = flip (appEndo . getConstant . k (Constant . Endo . flip step))
-{-# INLINABLE pretraverse #-}
+{-# INLINABLE handle #-}
 
 {-|
 > instance Monad m => Monoid (EndoM m a) where
@@ -826,22 +830,28 @@ instance Monad m => Monoid (EndoM m a) where
 type HandlerM m a b =
     forall x . (b -> Constant (EndoM m x) b) -> a -> Constant (EndoM m x) a 
 
-{-| @(pretraverseM t folder)@ traverses each incoming element using @Traversal'@
-    @t@ and folds every target of the @Traversal'@
+{-| @(handleM t folder)@ transforms the input of a `FoldM` using a lens,
+    traversal, or prism:
 
-> pretraverseM id = id
->
-> pretraverseM (f . g) = pretraverseM f . pretraverseM g
+> handleM _1       :: FoldM m a r -> FoldM (a, b) r
+> handleM _Left    :: FoldM m a r -> FoldM (Either a b) r
+> handleM traverse :: Traversable t => FoldM m a r -> FoldM m (t a) r
 
-> pretraverseM t (pure r) = pure r
+    `handleM` obeys these laws:
+
+> handleM id = id
 >
-> pretraverseM t (f <*> x) = pretraverseM t f <*> pretraverseM t x
+> handleM (f . g) = handleM f . handleM g
+
+> handleM t (pure r) = pure r
+>
+> handleM t (f <*> x) = handleM t f <*> handleM t x
 -}
-pretraverseM :: Monad m => HandlerM m a b -> FoldM m b r -> FoldM m a r
-pretraverseM k (FoldM step begin done) = FoldM step' begin done
+handleM :: Monad m => HandlerM m a b -> FoldM m b r -> FoldM m a r
+handleM k (FoldM step begin done) = FoldM step' begin done
   where
     step' = flip (appEndoM . getConstant . k (Constant . EndoM . flip step))
-{-# INLINABLE pretraverseM #-}
+{-# INLINABLE handleM #-}
 
 {- $reexports
     @Control.Monad.Primitive@ re-exports the 'PrimMonad' type class
