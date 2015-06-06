@@ -83,7 +83,10 @@ module Control.Foldl (
     , _Fold1
     , premap
     , premapM
+    , Handler
     , pretraverse
+    , EndoM(..)
+    , HandlerM
     , pretraverseM
 
     -- * Re-exports
@@ -95,7 +98,7 @@ module Control.Foldl (
 
 import Control.Applicative (Applicative(pure, (<*>)),liftA2)
 import Control.Foldl.Internal (Maybe'(..), lazy, Either'(..), hush)
-import Control.Monad ((<=<))
+import Control.Monad ((>=>))
 import Control.Monad.Primitive (PrimMonad)
 import Data.Foldable (Foldable)
 import qualified Data.Foldable as F
@@ -769,7 +772,12 @@ premapM f (FoldM step begin done) = FoldM step' begin done
     step' x a = step x (f a)
 {-# INLINABLE premapM #-}
 
-type Traversal' a b = forall f . Applicative f => (b -> f b) -> a -> f a
+{-| A handler for the upstream input of a `Fold`
+
+    Any lens, traversal, or prism will type-check as a `Handler`
+-}
+type Handler a b =
+    forall x . (b -> Constant (Endo x) b) -> a -> Constant (Endo x) a 
 
 {-| @(pretraverse t folder)@ traverses each incoming element using @Traversal'@
     @t@ and folds every target of the @Traversal'@
@@ -794,17 +802,29 @@ type Traversal' a b = forall f . Applicative f => (b -> f b) -> a -> f a
 >
 > pretraverse t (f <*> x) = pretraverse t f <*> pretraverse t x
 -}
-pretraverse :: Traversal' a b -> Fold b r -> Fold a r
+pretraverse :: Handler a b -> Fold b r -> Fold a r
 pretraverse k (Fold step begin done) = Fold step' begin done
   where
     step' = flip (appEndo . getConstant . k (Constant . Endo . flip step))
 {-# INLINABLE pretraverse #-}
 
+{-|
+> instance Monad m => Monoid (EndoM m a) where
+>     mempty = EndoM return
+>     mappend (EndoM f) (EndoM g) = EndoM (f >=> g)
+-}
 newtype EndoM m a = EndoM { appEndoM :: a -> m a }
 
 instance Monad m => Monoid (EndoM m a) where
     mempty = EndoM return
-    mappend (EndoM f) (EndoM g) = EndoM (f <=< g)
+    mappend (EndoM f) (EndoM g) = EndoM (f >=> g)
+
+{-| A Handler for the upstream input of `FoldM`
+
+    Any lens, traversal, or prism will type-check as a `HandlerM`
+-}
+type HandlerM m a b =
+    forall x . (b -> Constant (EndoM m x) b) -> a -> Constant (EndoM m x) a 
 
 {-| @(pretraverseM t folder)@ traverses each incoming element using @Traversal'@
     @t@ and folds every target of the @Traversal'@
@@ -817,7 +837,7 @@ instance Monad m => Monoid (EndoM m a) where
 >
 > pretraverseM t (f <*> x) = pretraverseM t f <*> pretraverseM t x
 -}
-pretraverseM :: Monad m => Traversal' a b -> FoldM m b r -> FoldM m a r
+pretraverseM :: Monad m => HandlerM m a b -> FoldM m b r -> FoldM m a r
 pretraverseM k (FoldM step begin done) = FoldM step' begin done
   where
     step' = flip (appEndoM . getConstant . k (Constant . EndoM . flip step))
