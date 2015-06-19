@@ -16,6 +16,13 @@
 >>> import Control.Applicative
 >>> let average = (/) <$> L.sum <*> L.genericLength
 
+    Taking the sum, the sum of squares, ..., upto the sum of x^5
+
+>>> import Data.Traversable
+>>> let powerSums = sequenceA [premap (^n) L.sum | n <- [1..5]]
+>>> L.fold powerSums [1..10]
+[55,385,3025,25333,220825]
+
     These combined folds will still traverse the list only once, streaming
     efficiently over the list in constant space without space leaks:
 
