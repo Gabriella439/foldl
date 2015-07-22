@@ -301,6 +301,10 @@ instance Monad m => Applicative (FoldM m a) where
         in  FoldM step begin done
     {-# INLINABLE (<*>) #-}
 
+instance Monad m => Profunctor (FoldM m) where
+    rmap = fmap
+    lmap = premapM
+
 instance (Monoid b, Monad m) => Monoid (FoldM m a b) where
     mempty = pure mempty
     {-# INLINABLE mempty #-}
@@ -773,7 +777,7 @@ premap f (Fold step begin done) = Fold step' begin done
 >
 > premapM k (f <*> x) = premapM k f <*> premapM k x
 -}
-premapM :: Monad m => (a -> b) -> FoldM m b r -> FoldM m a r
+premapM :: (a -> b) -> FoldM m b r -> FoldM m a r
 premapM f (FoldM step begin done) = FoldM step' begin done
   where
     step' x a = step x (f a)
