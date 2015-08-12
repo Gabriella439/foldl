@@ -107,6 +107,7 @@ import Control.Applicative (Applicative(pure, (<*>)),liftA2)
 import Control.Foldl.Internal (Maybe'(..), lazy, Either'(..), hush)
 import Control.Monad ((>=>))
 import Control.Monad.Primitive (PrimMonad)
+import Control.Comonad
 import Data.Foldable (Foldable)
 import qualified Data.Foldable as F
 import Data.Functor.Constant (Constant(Constant, getConstant))
@@ -158,6 +159,13 @@ instance Functor (Fold a) where
 instance Profunctor Fold where
     lmap = premap
     rmap = fmap
+
+instance Comonad (Fold a) where
+    extract (Fold _ begin done) = done begin
+    {-#  INLINABLE extract #-}
+
+    duplicate (Fold step begin done) = Fold step begin (\x -> Fold step x done)
+    {-#  INLINABLE duplicate #-}
 
 instance Applicative (Fold a) where
     pure b    = Fold (\() _ -> ()) () (\() -> b)
