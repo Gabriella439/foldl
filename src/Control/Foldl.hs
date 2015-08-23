@@ -87,6 +87,7 @@ module Control.Foldl (
     , impurely
     , generalize
     , simplify
+    , duplicateM
     , _Fold1
     , premap
     , premapM
@@ -735,6 +736,16 @@ simplify (FoldM step begin done) = Fold step' begin' done'
     begin'    = runIdentity  begin
     done' x   = runIdentity (done x)
 {-# INLINABLE simplify #-}
+
+{-| Allows to continue feeding a 'FoldM' even after passing it to a function 
+that closes it.
+
+For pure 'Fold's, this is provided by the 'Control.Comonad.Comonad' instance.
+-}
+duplicateM :: Applicative m => FoldM m a b -> FoldM m a (FoldM m a b)
+duplicateM (FoldM step begin done) = 
+    FoldM step begin (\x -> pure (FoldM step (pure x) done))
+{-# INLINABLE duplicateM #-}
 
 {-| @_Fold1 step@ returns a new 'Fold' using just a step function that has the
 same type for the accumulator and the element. The result type is the
