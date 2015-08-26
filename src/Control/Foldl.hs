@@ -51,6 +51,7 @@ module Control.Foldl (
     , head
     , last
     , lastDef
+    , lastN
     , null
     , length
     , and
@@ -115,10 +116,12 @@ import Data.Functor.Constant (Constant(Constant, getConstant))
 import Data.Functor.Identity (Identity, runIdentity)
 import Data.Profunctor
 import Data.Monoid (Monoid(mempty, mappend), Endo(Endo, appEndo))
+import Data.Sequence ((<|))
 import Data.Vector.Generic (Vector)
 import qualified Data.Vector.Generic as V
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.List as List
+import qualified Data.Sequence as Seq
 import qualified Data.Set as Set
 import System.Random.MWC (createSystemRandom, uniformR)
 import Prelude hiding
@@ -464,6 +467,22 @@ last = _Fold1 (flip const)
 lastDef :: a -> Fold a a
 lastDef a = Fold (\_ a' -> a') a id
 {-# INLINABLE lastDef #-}
+
+{-| Return the last N elements
+
+-}
+lastN :: Int -> Fold a [a]
+lastN n = Fold step begin done
+  where
+    step s a = a <| s'
+      where
+        s' =
+            if Seq.length s < n
+            then s
+            else Seq.drop 1 s
+    begin = Seq.empty
+    done  = F.toList
+{-# INLINABLE lastN #-}
 
 -- | Returns 'True' if the container is empty, 'False' otherwise
 null :: Fold a Bool
