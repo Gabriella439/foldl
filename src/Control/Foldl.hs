@@ -631,6 +631,7 @@ sink act = FoldM step begin done  where
   step m a = do
     m' <- act a
     return $! mappend m m'
+{-# INLINABLE sink #-}
 
 -- | Like 'length', except with a more general 'Num' return value
 genericLength :: Num b => Fold a b
