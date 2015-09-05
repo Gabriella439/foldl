@@ -69,6 +69,7 @@ module Control.Foldl (
     , elemIndex
     , findIndex
     , random
+    , sink
 
     -- * Generic Folds
     , genericLength
@@ -614,6 +615,23 @@ random = FoldM step begin done
 
     done (Pair3 _ ma _) = return (lazy ma)
 {-# INLINABLE random #-}
+
+
+{-| Converts an effectful function to a fold
+
+> sink (f <> g) = sink f <> sink g -- if `(<>)` is commutative
+> sink mempty = mempty
+-}
+
+
+sink ::  (Monoid w, Monad m) => (a -> m w) -> FoldM m a w
+sink act = FoldM step begin done  where
+  done = return
+  begin = return mempty
+  step m a = do
+    m' <- act a
+    return $! mappend m m'
+{-# INLINABLE sink #-}
 
 -- | Like 'length', except with a more general 'Num' return value
 genericLength :: Num b => Fold a b
