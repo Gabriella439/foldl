@@ -33,7 +33,10 @@
 
 -}
 
-{-# LANGUAGE ExistentialQuantification, RankNTypes, Trustworthy #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE RankNTypes                #-}
+{-# LANGUAGE Trustworthy               #-}
 
 module Control.Foldl (
     -- * Fold Types
@@ -69,6 +72,7 @@ module Control.Foldl (
     , elemIndex
     , findIndex
     , random
+    , randomN
     , sink
 
     -- * Generic Folds
@@ -106,25 +110,20 @@ module Control.Foldl (
     , module Data.Vector.Generic
     ) where
 
-import Control.Applicative (Applicative(pure, (<*>)),liftA2)
+import Control.Applicative
 import Control.Foldl.Internal (Maybe'(..), lazy, Either'(..), hush)
 import Control.Monad ((>=>))
-import Control.Monad.Primitive (PrimMonad)
+import Control.Monad.Primitive (PrimMonad, RealWorld)
 import Control.Comonad
 import Data.Foldable (Foldable)
-import qualified Data.Foldable as F
 import Data.Functor.Constant (Constant(Constant, getConstant))
 import Data.Functor.Identity (Identity, runIdentity)
+import Data.Monoid
 import Data.Profunctor
-import Data.Monoid (Monoid(mempty, mappend), Endo(Endo, appEndo))
 import Data.Sequence ((<|))
-import Data.Vector.Generic (Vector)
-import qualified Data.Vector.Generic as V
-import qualified Data.Vector.Generic.Mutable as M
-import qualified Data.List as List
-import qualified Data.Sequence as Seq
-import qualified Data.Set as Set
-import System.Random.MWC (createSystemRandom, uniformR)
+import Data.Vector.Generic (Vector, Mutable)
+import Data.Vector.Generic.Mutable (MVector)
+import System.Random.MWC (GenIO, createSystemRandom, uniformR)
 import Prelude hiding
     ( head
     , last
@@ -141,6 +140,13 @@ import Prelude hiding
     , elem
     , notElem
     )
+
+import qualified Data.Foldable               as F
+import qualified Data.List                   as List
+import qualified Data.Sequence               as Seq
+import qualified Data.Set                    as Set
+import qualified Data.Vector.Generic         as V
+import qualified Data.Vector.Generic.Mutable as M
 
 {-| Efficient representation of a left fold that preserves the fold's step
     function, initial accumulator, and extraction function
@@ -604,18 +610,57 @@ random :: FoldM IO a (Maybe a)
 random = FoldM step begin done
   where
     begin = do
-        gen <- createSystemRandom
-        return $! Pair3 gen Nothing' (1 :: Int)
+        g <- createSystemRandom
+        return $! Pair3 g Nothing' (1 :: Int)
 
-    step (Pair3 gen Nothing'  _) a = return $! Pair3 gen (Just' a) 2
-    step (Pair3 gen (Just' a) m) b = do
-        n <- uniformR (1, m) gen
+    step (Pair3 g Nothing'  _) a = return $! Pair3 g (Just' a) 2
+    step (Pair3 g (Just' a) m) b = do
+        n <- uniformR (1, m) g
         let c = if n == 1 then b else a
-        return $! Pair3 gen (Just' c) (m + 1)
+        return $! Pair3 g (Just' c) (m + 1)
 
     done (Pair3 _ ma _) = return (lazy ma)
 {-# INLINABLE random #-}
 
+data VectorState = Incomplete {-# UNPACK #-} !Int | Complete
+
+data RandomNState v a = RandomNState
+    { _size      ::                !VectorState
+    , _reservoir ::                !(Mutable v RealWorld a)
+    , _position  :: {-# UNPACK #-} !Int
+    , _gen       :: {-# UNPACK #-} !GenIO
+    }
+
+-- | Pick several random elements, using reservoir sampling
+randomN :: Vector v a => Int -> FoldM IO a (Maybe (v a))
+randomN n = FoldM step begin done
+  where
+    step
+        :: MVector (Mutable v) a
+        => RandomNState v a -> a -> IO (RandomNState v a)
+    step (RandomNState (Incomplete m) mv i g) a = do
+        M.write mv m a
+        let m' = m + 1
+        let s  = if n <= m' then Complete else Incomplete m'
+        return $! RandomNState s mv (i + 1) g
+    step (RandomNState  Complete      mv i g) a = do
+        r <- uniformR (0, i - 1) g
+        if r < n
+            then M.unsafeWrite mv r a
+            else return ()
+        return (RandomNState Complete mv (i + 1) g)
+
+    begin = do
+        mv  <- M.new n
+        gen <- createSystemRandom
+        let s = if n <= 0 then Complete else Incomplete 0
+        return (RandomNState s mv 1 gen)
+
+    done :: Vector v a => RandomNState v a -> IO (Maybe (v a))
+    done (RandomNState (Incomplete _) _  _ _) = return Nothing
+    done (RandomNState  Complete      mv _ _) = do
+        v <- V.freeze mv
+        return (Just v)
 
 {-| Converts an effectful function to a fold
 
@@ -707,7 +752,7 @@ vector = FoldM step begin done
         M.unsafeWrite mv' idx a
         return (Pair mv' (idx + 1))
     done (Pair mv idx) = do
-        v <- V.unsafeFreeze mv
+        v <- V.freeze mv
         return (V.unsafeTake idx v)
 {-# INLINABLE vector #-}
 
