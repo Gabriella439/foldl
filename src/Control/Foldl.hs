@@ -90,7 +90,9 @@ module Control.Foldl (
     -- * Utilities
     -- $utilities
     , purely
+    , purely_
     , impurely
+    , impurely_
     , generalize
     , simplify
     , duplicateM
@@ -782,6 +784,11 @@ purely :: (forall x . (x -> a -> x) -> x -> (x -> b) -> r) -> Fold a b -> r
 purely f (Fold step begin done) = f step begin done
 {-# INLINABLE purely #-}
 
+-- | Upgrade a more traditional fold to accept the `Fold` type
+purely_ :: (forall x . (x -> a -> x) -> x -> x) -> Fold a b -> b
+purely_ f (Fold step begin done) = done (f step begin)
+{-# INLINABLE purely_ #-}
+
 -- | Upgrade a monadic fold to accept the 'FoldM' type
 impurely
     :: Monad m
@@ -790,6 +797,15 @@ impurely
     -> r
 impurely f (FoldM step begin done) = f step begin done
 {-# INLINABLE impurely #-}
+
+-- | Upgrade a more traditional monadic fold to accept the `FoldM` type
+impurely_
+    :: Monad m
+    => (forall x . (x -> a -> m x) -> m x -> m x) -> FoldM m a b -> m b
+impurely_ f (FoldM step begin done) = do
+    x <- f step begin
+    done x
+{-# INLINABLE impurely_ #-}
 
 {-| Generalize a `Fold` to a `FoldM`
 
