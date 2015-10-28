@@ -73,6 +73,7 @@ module Control.Foldl (
     , findIndex
     , random
     , randomN
+    , Control.Foldl.mapM_
     , sink
 
     -- * Generic Folds
@@ -664,6 +665,11 @@ randomN n = FoldM step begin done
         v <- V.freeze mv
         return (Just v)
 
+-- | Converts an effectful function to a fold. Specialized version of 'sink'.
+mapM_ :: Monad m => (a -> m ()) -> FoldM m a ()
+mapM_ = sink
+{-# INLINABLE mapM_ #-}
+
 {-| Converts an effectful function to a fold
 
 > sink (f <> g) = sink f <> sink g -- if `(<>)` is commutative
@@ -835,13 +841,13 @@ simplify (FoldM step begin done) = Fold step' begin' done'
     done' x   = runIdentity (done x)
 {-# INLINABLE simplify #-}
 
-{-| Allows to continue feeding a 'FoldM' even after passing it to a function 
+{-| Allows to continue feeding a 'FoldM' even after passing it to a function
 that closes it.
 
 For pure 'Fold's, this is provided by the 'Control.Comonad.Comonad' instance.
 -}
 duplicateM :: Applicative m => FoldM m a b -> FoldM m a (FoldM m a b)
-duplicateM (FoldM step begin done) = 
+duplicateM (FoldM step begin done) =
     FoldM step begin (\x -> pure (FoldM step (pure x) done))
 {-# INLINABLE duplicateM #-}
 
@@ -905,7 +911,7 @@ premapM f (FoldM step begin done) = FoldM step' begin done
     Any lens, traversal, or prism will type-check as a `Handler`
 -}
 type Handler a b =
-    forall x . (b -> Constant (Endo x) b) -> a -> Constant (Endo x) a 
+    forall x . (b -> Constant (Endo x) b) -> a -> Constant (Endo x) a
 
 {-| @(handles t folder)@ transforms the input of a `Fold` using a lens,
     traversal, or prism:
@@ -956,7 +962,7 @@ instance Monad m => Monoid (EndoM m a) where
     Any lens, traversal, or prism will type-check as a `HandlerM`
 -}
 type HandlerM m a b =
-    forall x . (b -> Constant (EndoM m x) b) -> a -> Constant (EndoM m x) a 
+    forall x . (b -> Constant (EndoM m x) b) -> a -> Constant (EndoM m x) a
 
 {-| @(handlesM t folder)@ transforms the input of a `FoldM` using a lens,
     traversal, or prism:
