@@ -96,6 +96,7 @@ module Control.Foldl (
     , impurely_
     , generalize
     , simplify
+    , hoists
     , duplicateM
     , _Fold1
     , premap
@@ -840,6 +841,13 @@ simplify (FoldM step begin done) = Fold step' begin' done'
     begin'    = runIdentity  begin
     done' x   = runIdentity (done x)
 {-# INLINABLE simplify #-}
+
+
+{- | Shift a 'FoldM' from one monad to another with a morphism such as 'lift' or 'liftIO';
+     the effect is the same as 'Control.Monad.Morph.hoist'.
+-}
+hoists :: Monad m => (forall x . m x -> n x) -> FoldM m a b -> FoldM n a b
+hoists phi (FoldM step begin done) = FoldM (\a b -> phi (step a b)) (phi begin) (phi . done)
 
 {-| Allows to continue feeding a 'FoldM' even after passing it to a function
 that closes it.
