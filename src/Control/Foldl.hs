@@ -124,7 +124,7 @@ import Data.Functor.Constant (Constant(Constant, getConstant))
 import Data.Functor.Identity (Identity, runIdentity)
 import Data.Monoid
 import Data.Profunctor
-import Data.Sequence ((<|))
+import Data.Sequence ((|>))
 import Data.Vector.Generic (Vector, Mutable)
 import Data.Vector.Generic.Mutable (MVector)
 import System.Random.MWC (GenIO, createSystemRandom, uniformR)
@@ -485,7 +485,7 @@ lastDef a = Fold (\_ a' -> a') a id
 lastN :: Int -> Fold a [a]
 lastN n = Fold step begin done
   where
-    step s a = a <| s'
+    step s a = s' |> a
       where
         s' =
             if Seq.length s < n
