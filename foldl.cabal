@@ -28,9 +28,9 @@ Library
         text         >= 0.11.2.0 && < 1.3 ,
         transformers >= 0.2.0.0  && < 0.5 ,
         vector       >= 0.7      && < 0.12,
-        containers                  < 0.6,
-        profunctors                 < 5.3,
-        comonad      == 4.*
+        containers                  < 0.6 ,
+        profunctors                 < 5.3 ,
+        comonad      >= 4.0      && < 6
     Exposed-Modules:
         Control.Foldl,
         Control.Foldl.ByteString,
