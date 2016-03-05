@@ -64,7 +64,9 @@ module Control.Foldl (
     , sum
     , product
     , maximum
+    , maximumBy
     , minimum
+    , minimumBy
     , elem
     , notElem
     , find
@@ -549,10 +551,32 @@ maximum :: Ord a => Fold a (Maybe a)
 maximum = _Fold1 max
 {-# INLINABLE maximum #-}
 
+{-| Computes the maximum element with respect to the given comparison
+    function
+-}
+maximumBy :: (a -> a -> Ordering) -> Fold a (Maybe a)
+maximumBy cmp = _Fold1 max'
+  where 
+    max' x y = case cmp x y of
+        GT -> x
+        _  -> y
+{-# INLINABLE maximumBy #-}
+
 -- | Computes the minimum element
 minimum :: Ord a => Fold a (Maybe a)
 minimum = _Fold1 min
 {-# INLINABLE minimum #-}
+
+{-| Computes the minimum element with respect to the given comparison
+    function
+-}
+minimumBy :: (a -> a -> Ordering) -> Fold a (Maybe a)
+minimumBy cmp = _Fold1 min'
+  where 
+    min' x y = case cmp x y of
+        GT -> y
+        _  -> x
+{-# INLINABLE minimumBy #-}
 
 {-| @(elem a)@ returns 'True' if the container has an element equal to @a@,
     'False' otherwise
