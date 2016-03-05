@@ -951,6 +951,7 @@ type Handler a b =
 > handles _1       :: Fold a r -> Fold (a, b) r
 > handles _Left    :: Fold a r -> Fold (Either a b) r
 > handles traverse :: Traversable t => Fold a r -> Fold (t a) r
+> handles folded   :: Foldable    t => Fold a r -> Fold (t a) r
 
 >>> fold (handles traverse sum) [[1..5],[6..10]]
 55
@@ -958,7 +959,7 @@ type Handler a b =
 >>> fold (handles (traverse.traverse) sum) [[Nothing, Just 2, Just 7],[Just 13, Nothing, Just 20]]
 42
 
->>> fold (handles (filtered even) sum) [1,3,5,7,21,21]
+>>> fold (handles (filtered even) sum) [1..10]
 42
 
 >>> fold (handles _2 mconcat) [(1,"Hello "),(2,"World"),(3,"!")]
@@ -1002,6 +1003,7 @@ type HandlerM m a b =
 > handlesM _1       :: FoldM m a r -> FoldM (a, b) r
 > handlesM _Left    :: FoldM m a r -> FoldM (Either a b) r
 > handlesM traverse :: Traversable t => FoldM m a r -> FoldM m (t a) r
+> handlesM folded   :: Foldable    t => FoldM m a r -> FoldM m (t a) r
 
     `handlesM` obeys these laws:
 
