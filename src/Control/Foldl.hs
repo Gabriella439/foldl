@@ -797,17 +797,46 @@ vector = FoldM step begin done
     function to accept a 'Fold' or 'FoldM' using the 'purely' or 'impurely'
     combinators.
 
-    For example, the @pipes@ library implements a @foldM@ function in
+    For example, the @pipes@ library implements @fold@ and @foldM@ functions in
     @Pipes.Prelude@ with the following type:
 
-> foldM
+> Pipes.Prelude.fold
+>     :: Monad m
+>     -> (x -> a -> x) -> x -> (x -> b) -> Producer a m () -> m b
+>
+> Pipes.Prelude.foldM
 >     :: Monad m
 >     => (x -> a -> m x) -> m x -> (x -> m b) -> Producer a m () -> m b
 
-    @foldM@ is set up so that you can wrap it with 'impurely' to accept a
-    'FoldM' instead:
+    Both @fold@ and @foldM@ is set up so that you can wrap them with either
+    'purely' or 'impurely' to accept a 'Fold' or 'FoldM', respectively:
 
-> impurely foldM :: Monad m => FoldM m a b -> Producer a m () -> m b
+> purely Pipes.Prelude.fold
+>     :: Monad m => Fold a b -> Producer a m () -> m b
+>
+> impurely Pipes.Prelude.foldM
+>     :: Monad m => FoldM m a b -> Producer a m () -> m b
+
+    Similarly the @ofoldlUnwrap@ and @ofoldMUnwrap@ functions from the
+    @monotraversable@ package are written to interoperate with this library:
+
+> ofoldlUnwrap
+>     :: MonoFoldable mono
+>     => (x -> Element mono -> x) -> x -> (x -> b) -> mono -> b 
+>
+> ofoldMUnwrap
+>     :: (Monad m, MonoFoldable mono)
+>     => (x -> Element mono -> m x) -> m x -> (x -> m b) -> mono -> m b 
+
+    You can wrap these to accept 'Fold' or 'FoldM', too:
+
+> purely ofoldlUnwrap
+>     :: MonoFoldable mono
+>     => Fold (Element mono) b -> mono -> b
+>
+> impurely ofoldMUnwrap
+>     :: MonoFoldable mono
+>     => FoldM m (Element mono) b -> mono -> m b
 -}
 
 -- | Upgrade a fold to accept the 'Fold' type
