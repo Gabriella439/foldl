@@ -103,6 +103,7 @@ module Control.Foldl (
     , _Fold1
     , premap
     , premapM
+    , prefolding
     , Handler
     , handles
     , EndoM(..)
@@ -966,6 +967,17 @@ premapM f (FoldM step begin done) = FoldM step' begin done
   where
     step' x a = step x (f a)
 {-# INLINABLE premapM #-}
+
+{-| @(prefolding folder)@ produces a new 'Fold',
+    which prefolds the input.
+
+> fold (prefolding folder) [Just 1, Nothing, Just 2] = fold folder [1, 2]
+
+-}
+prefolding :: Foldable t => Fold a b -> Fold (t a) b
+prefolding (Fold step begin done) =
+  Fold (foldl step) begin done
+{-# INLINE prefolding #-}
 
 {-| A handler for the upstream input of a `Fold`
 
