@@ -118,11 +118,10 @@ module Control.Foldl (
 
 import Control.Applicative
 import Control.Foldl.Internal (Maybe'(..), lazy, Either'(..), hush)
-import Control.Monad ((>=>))
+import Control.Monad ((<=<))
 import Control.Monad.Primitive (PrimMonad, RealWorld)
 import Control.Comonad
 import Data.Foldable (Foldable)
-import Data.Functor.Constant (Constant(Constant, getConstant))
 import Data.Functor.Identity (Identity, runIdentity)
 import Data.Monoid
 import Data.Profunctor
@@ -972,7 +971,7 @@ premapM f (FoldM step begin done) = FoldM step' begin done
     Any lens, traversal, or prism will type-check as a `Handler`
 -}
 type Handler a b =
-    forall x . (b -> Constant (Endo x) b) -> a -> Constant (Endo x) a
+    forall x . (b -> Const (Dual (Endo x)) b) -> a -> Const (Dual (Endo x)) a
 
 {-| @(handles t folder)@ transforms the input of a `Fold` using a lens,
     traversal, or prism:
@@ -1005,26 +1004,26 @@ type Handler a b =
 handles :: Handler a b -> Fold b r -> Fold a r
 handles k (Fold step begin done) = Fold step' begin done
   where
-    step' = flip (appEndo . getConstant . k (Constant . Endo . flip step))
+    step' = flip (appEndo . getDual . getConst . k (Const . Dual . Endo . flip step))
 {-# INLINABLE handles #-}
 
 {-|
 > instance Monad m => Monoid (EndoM m a) where
 >     mempty = EndoM return
->     mappend (EndoM f) (EndoM g) = EndoM (f >=> g)
+>     mappend (EndoM f) (EndoM g) = EndoM (f <=< g)
 -}
 newtype EndoM m a = EndoM { appEndoM :: a -> m a }
 
 instance Monad m => Monoid (EndoM m a) where
     mempty = EndoM return
-    mappend (EndoM f) (EndoM g) = EndoM (f >=> g)
+    mappend (EndoM f) (EndoM g) = EndoM (f <=< g)
 
 {-| A Handler for the upstream input of `FoldM`
 
     Any lens, traversal, or prism will type-check as a `HandlerM`
 -}
 type HandlerM m a b =
-    forall x . (b -> Constant (EndoM m x) b) -> a -> Constant (EndoM m x) a
+    forall x . (b -> Const (Dual (EndoM m x)) b) -> a -> Const (Dual (EndoM m x)) a
 
 {-| @(handlesM t folder)@ transforms the input of a `FoldM` using a lens,
     traversal, or prism:
@@ -1047,7 +1046,7 @@ type HandlerM m a b =
 handlesM :: Monad m => HandlerM m a b -> FoldM m b r -> FoldM m a r
 handlesM k (FoldM step begin done) = FoldM step' begin done
   where
-    step' = flip (appEndoM . getConstant . k (Constant . EndoM . flip step))
+    step' = flip (appEndoM . getDual . getConst . k (Const . Dual . EndoM . flip step))
 {-# INLINABLE handlesM #-}
 
 {- $reexports
