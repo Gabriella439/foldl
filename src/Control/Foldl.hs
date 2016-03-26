@@ -108,6 +108,7 @@ module Control.Foldl (
     , EndoM(..)
     , HandlerM
     , handlesM
+    , folded
 
     -- * Re-exports
     -- $reexports
@@ -123,6 +124,7 @@ import Control.Monad.Primitive (PrimMonad, RealWorld)
 import Control.Comonad
 import Data.Foldable (Foldable)
 import Data.Functor.Identity (Identity, runIdentity)
+import Data.Functor.Contravariant (Contravariant(..))
 import Data.Monoid
 import Data.Profunctor
 import Data.Sequence ((|>))
@@ -1048,6 +1050,16 @@ handlesM k (FoldM step begin done) = FoldM step' begin done
   where
     step' = flip (appEndoM . getDual . getConst . k (Const . Dual . EndoM . flip step))
 {-# INLINABLE handlesM #-}
+
+{-|
+> folded :: Foldable t => Fold (t a) a
+>
+> handles folded :: Foldable t => Fold a r -> Fold (t a) r
+-}
+folded
+    :: (Contravariant f, Applicative f, Foldable t)
+    => (a -> f a) -> (t a -> f (t a))
+folded k ts = contramap (\_ -> ()) (F.traverse_ k ts)
 
 {- $reexports
     @Control.Monad.Primitive@ re-exports the 'PrimMonad' type class
