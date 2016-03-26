@@ -29,6 +29,7 @@ Library
         transformers >= 0.2.0.0  && < 0.5 ,
         vector       >= 0.7      && < 0.12,
         containers                  < 0.6 ,
+        contravariant               < 1.5 ,
         profunctors                 < 5.3 ,
         comonad      >= 4.0      && < 6
     Exposed-Modules:
