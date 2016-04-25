@@ -19,7 +19,7 @@
     Taking the sum, the sum of squares, ..., upto the sum of x^5
 
 >>> import Data.Traversable
->>> let powerSums = sequenceA [premap (^n) L.sum | n <- [1..5]]
+>>> let powerSums = sequenceA [L.premap (^n) L.sum | n <- [1..5]]
 >>> L.fold powerSums [1..10]
 [55,385,3025,25333,220825]
 
