@@ -172,7 +172,7 @@ data Pair a b = Pair !a !b
 
 instance Functor (Fold a) where
     fmap f (Fold step begin done) = Fold step begin (f . done)
-    {-# INLINABLE fmap #-}
+    {-# INLINE fmap #-}
 
 instance Profunctor Fold where
     lmap = premap
@@ -187,14 +187,14 @@ instance Comonad (Fold a) where
 
 instance Applicative (Fold a) where
     pure b    = Fold (\() _ -> ()) () (\() -> b)
-    {-# INLINABLE pure #-}
+    {-# INLINE pure #-}
 
     (Fold stepL beginL doneL) <*> (Fold stepR beginR doneR) =
         let step (Pair xL xR) a = Pair (stepL xL a) (stepR xR a)
             begin = Pair beginL beginR
             done (Pair xL xR) = doneL xL (doneR xR)
         in  Fold step begin done
-    {-# INLINABLE (<*>) #-}
+    {-# INLINE (<*>) #-}
 
 instance Monoid b => Monoid (Fold a b) where
     mempty = pure mempty
