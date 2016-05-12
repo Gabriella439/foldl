@@ -557,7 +557,7 @@ maximum = _Fold1 max
 -}
 maximumBy :: (a -> a -> Ordering) -> Fold a (Maybe a)
 maximumBy cmp = _Fold1 max'
-  where 
+  where
     max' x y = case cmp x y of
         GT -> x
         _  -> y
@@ -573,7 +573,7 @@ minimum = _Fold1 min
 -}
 minimumBy :: (a -> a -> Ordering) -> Fold a (Maybe a)
 minimumBy cmp = _Fold1 min'
-  where 
+  where
     min' x y = case cmp x y of
         GT -> y
         _  -> x
@@ -823,11 +823,11 @@ vector = FoldM step begin done
 
 > ofoldlUnwrap
 >     :: MonoFoldable mono
->     => (x -> Element mono -> x) -> x -> (x -> b) -> mono -> b 
+>     => (x -> Element mono -> x) -> x -> (x -> b) -> mono -> b
 >
 > ofoldMUnwrap
 >     :: (Monad m, MonoFoldable mono)
->     => (x -> Element mono -> m x) -> m x -> (x -> m b) -> mono -> m b 
+>     => (x -> Element mono -> m x) -> m x -> (x -> m b) -> mono -> m b
 
     You can wrap these to accept 'Fold' or 'FoldM', too:
 
