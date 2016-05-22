@@ -109,6 +109,7 @@ module Control.Foldl (
     , HandlerM
     , handlesM
     , folded
+    , filtered
 
     -- * Re-exports
     -- $reexports
@@ -557,7 +558,7 @@ maximum = _Fold1 max
 -}
 maximumBy :: (a -> a -> Ordering) -> Fold a (Maybe a)
 maximumBy cmp = _Fold1 max'
-  where 
+  where
     max' x y = case cmp x y of
         GT -> x
         _  -> y
@@ -573,7 +574,7 @@ minimum = _Fold1 min
 -}
 minimumBy :: (a -> a -> Ordering) -> Fold a (Maybe a)
 minimumBy cmp = _Fold1 min'
-  where 
+  where
     min' x y = case cmp x y of
         GT -> y
         _  -> x
@@ -823,11 +824,11 @@ vector = FoldM step begin done
 
 > ofoldlUnwrap
 >     :: MonoFoldable mono
->     => (x -> Element mono -> x) -> x -> (x -> b) -> mono -> b 
+>     => (x -> Element mono -> x) -> x -> (x -> b) -> mono -> b
 >
 > ofoldMUnwrap
 >     :: (Monad m, MonoFoldable mono)
->     => (x -> Element mono -> m x) -> m x -> (x -> m b) -> mono -> m b 
+>     => (x -> Element mono -> m x) -> m x -> (x -> m b) -> mono -> m b
 
     You can wrap these to accept 'Fold' or 'FoldM', too:
 
@@ -990,7 +991,7 @@ type Handler a b =
 42
 
 >>> fold (handles (filtered even) sum) [1..10]
-42
+30
 
 >>> fold (handles _2 mconcat) [(1,"Hello "),(2,"World"),(3,"!")]
 "Hello World!"
@@ -1060,6 +1061,24 @@ folded
     :: (Contravariant f, Applicative f, Foldable t)
     => (a -> f a) -> (t a -> f (t a))
 folded k ts = contramap (\_ -> ()) (F.traverse_ k ts)
+
+{-|
+>>> fold (handles (filtered even) sum) [1..10]
+30
+
+>>> foldM (handlesM (filtered even) (mapM_ print)) [1..10]
+2
+4
+6
+8
+10
+
+-}
+filtered :: Monoid m => (a -> Bool) -> (a -> m) -> a -> m
+filtered p k x
+    | p x = k x
+    | otherwise = mempty
+{-# INLINABLE filtered #-}
 
 {- $reexports
     @Control.Monad.Primitive@ re-exports the 'PrimMonad' type class
