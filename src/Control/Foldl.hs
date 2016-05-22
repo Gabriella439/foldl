@@ -103,14 +103,13 @@ module Control.Foldl (
     , _Fold1
     , premap
     , premapM
-    , prefilter
-    , prefilterM
     , Handler
     , handles
     , EndoM(..)
     , HandlerM
     , handlesM
     , folded
+    , filtered
 
     -- * Re-exports
     -- $reexports
@@ -970,32 +969,6 @@ premapM f (FoldM step begin done) = FoldM step' begin done
     step' x a = step x (f a)
 {-# INLINABLE premapM #-}
 
-{-| @(prefilter p folder)@ returns a new 'Fold' that will consider only elements
-    that satisfy @p@.
-
-> fold (prefilter p folder) list = fold folder (filter p list)
--}
-prefilter :: (a -> Bool) -> Fold a r -> Fold a r
-prefilter p (Fold step begin done) = Fold step' begin done
-  where
-    step' x a
-      | p a = step x a
-      | otherwise = x
-{-# INLINABLE prefilter #-}
-
-{-| @(prefilterM p folder)@ returns a new 'FoldM' that will consider only
-    elements that satisfy @p@.
-
-> foldM (prefilterM p folder) list = foldM folder (filter p list)
--}
-prefilterM :: Applicative m => (a -> Bool) -> FoldM m a r -> FoldM m a r
-prefilterM p (FoldM step begin done) = FoldM step' begin done
-  where
-    step' x a
-      | p a = step x a
-      | otherwise = pure x
-{-# INLINABLE prefilterM #-}
-
 {-| A handler for the upstream input of a `Fold`
 
     Any lens, traversal, or prism will type-check as a `Handler`
@@ -1018,7 +991,7 @@ type Handler a b =
 42
 
 >>> fold (handles (filtered even) sum) [1..10]
-42
+30
 
 >>> fold (handles _2 mconcat) [(1,"Hello "),(2,"World"),(3,"!")]
 "Hello World!"
@@ -1088,6 +1061,24 @@ folded
     :: (Contravariant f, Applicative f, Foldable t)
     => (a -> f a) -> (t a -> f (t a))
 folded k ts = contramap (\_ -> ()) (F.traverse_ k ts)
+
+{-|
+>>> fold (handles (filtered even) sum) [1..10]
+30
+
+>>> foldM (handlesM (filtered even) (mapM_ print)) [1..10]
+2
+4
+6
+8
+10
+
+-}
+filtered :: Monoid m => (a -> Bool) -> (a -> m) -> a -> m
+filtered p k x
+    | p x = k x
+    | otherwise = mempty
+{-# INLINABLE filtered #-}
 
 {- $reexports
     @Control.Monad.Primitive@ re-exports the 'PrimMonad' type class
