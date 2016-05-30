@@ -40,3 +40,13 @@ Library
     Other-Modules:
         Control.Foldl.Internal
     GHC-Options: -O2 -Wall
+
+Benchmark benchmarks
+    Type: exitcode-stdio-1.0
+    HS-Source-Dirs: bench
+    Main-Is: benchmarks.hs
+    Build-Depends:
+        base,
+        criterion,
+        foldl
+    GHC-Options: -O2 -Wall -rtsopts
