@@ -105,7 +105,7 @@ the composite step function and starting state:
 fold (Fold step begin done) = done (foldl' step begin)
 ```
 
-Since preserve the step function and accumulator, we can use the `Fold` type to
+Since we preserve the step function and accumulator, we can use the `Fold` type to
 fold things other than pure collections.  For example, we can fold a `Producer`
 from `pipes` using the same `Fold`:
 
