@@ -31,6 +31,8 @@
 >>> L.fold ((,) <$> L.minimum <*> L.maximum) [1..10000000]
 (Just 1,Just 10000000)
 
+    You might want to try enabling the @-flate-dmd-anal@ flag when compiling
+    executables that use this library to further improve performance.
 -}
 
 {-# LANGUAGE ExistentialQuantification #-}
