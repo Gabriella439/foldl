@@ -15,6 +15,9 @@ Description: This library provides strict left folds that stream in constant
   folds.  Derived folds still traverse the container just once and are often as
   efficient as hand-written folds.
 Category: Control
+Extra-Source-Files:
+    CHANGELOG.md
+    README.md
 Source-Repository head
     Type: git
     Location: https://github.com/Gabriel439/Haskell-Foldl-Library
