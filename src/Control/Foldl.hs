@@ -905,6 +905,7 @@ simplify (FoldM step begin done) = Fold step' begin' done'
 -}
 hoists :: Monad m => (forall x . m x -> n x) -> FoldM m a b -> FoldM n a b
 hoists phi (FoldM step begin done) = FoldM (\a b -> phi (step a b)) (phi begin) (phi . done)
+{-# INLINABLE hoists #-}
 
 {-| Allows to continue feeding a 'FoldM' even after passing it to a function
 that closes it.
@@ -927,6 +928,7 @@ _Fold1 step = Fold step_ Nothing' lazy
     step_ mx a = Just' (case mx of
         Nothing' -> a
         Just' x -> step x a)
+{-# INLINABLE _Fold1 #-}
 
 {-| @(premap f folder)@ returns a new 'Fold' where f is applied at each step
 
@@ -1021,7 +1023,10 @@ newtype EndoM m a = EndoM { appEndoM :: a -> m a }
 
 instance Monad m => Monoid (EndoM m a) where
     mempty = EndoM return
+    {-# INLINABLE mempty #-}
+
     mappend (EndoM f) (EndoM g) = EndoM (f <=< g)
+    {-# INLINABLE mappend #-}
 
 {-| A Handler for the upstream input of `FoldM`
 
@@ -1063,6 +1068,7 @@ folded
     :: (Contravariant f, Applicative f, Foldable t)
     => (a -> f a) -> (t a -> f (t a))
 folded k ts = contramap (\_ -> ()) (F.traverse_ k ts)
+{-# INLINABLE folded #-}
 
 {-|
 >>> fold (handles (filtered even) sum) [1..10]
