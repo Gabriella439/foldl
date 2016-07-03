@@ -855,8 +855,7 @@ purely_ f (Fold step begin done) = done (f step begin)
 
 -- | Upgrade a monadic fold to accept the 'FoldM' type
 impurely
-    :: Monad m
-    => (forall x . (x -> a -> m x) -> m x -> (x -> m b) -> r)
+    :: (forall x . (x -> a -> m x) -> m x -> (x -> m b) -> r)
     -> FoldM m a b
     -> r
 impurely f (FoldM step begin done) = f step begin done
@@ -903,7 +902,7 @@ simplify (FoldM step begin done) = Fold step' begin' done'
 {- | Shift a 'FoldM' from one monad to another with a morphism such as 'lift' or 'liftIO';
      the effect is the same as 'Control.Monad.Morph.hoist'.
 -}
-hoists :: Monad m => (forall x . m x -> n x) -> FoldM m a b -> FoldM n a b
+hoists :: (forall x . m x -> n x) -> FoldM m a b -> FoldM n a b
 hoists phi (FoldM step begin done) = FoldM (\a b -> phi (step a b)) (phi begin) (phi . done)
 
 {-| Allows to continue feeding a 'FoldM' even after passing it to a function
@@ -1048,7 +1047,7 @@ type HandlerM m a b =
 >
 > handlesM t (f <*> x) = handlesM t f <*> handlesM t x
 -}
-handlesM :: Monad m => HandlerM m a b -> FoldM m b r -> FoldM m a r
+handlesM :: HandlerM m a b -> FoldM m b r -> FoldM m a r
 handlesM k (FoldM step begin done) = FoldM step' begin done
   where
     step' = flip (appEndoM . getDual . getConst . k (Const . Dual . EndoM . flip step))
