@@ -183,10 +183,10 @@ instance Profunctor Fold where
 
 instance Comonad (Fold a) where
     extract (Fold _ begin done) = done begin
-    {-#  INLINABLE extract #-}
+    {-#  INLINE extract #-}
 
     duplicate (Fold step begin done) = Fold step begin (\x -> Fold step x done)
-    {-#  INLINABLE duplicate #-}
+    {-#  INLINE duplicate #-}
 
 instance Applicative (Fold a) where
     pure b    = Fold (\() _ -> ()) () (\() -> b)
@@ -201,97 +201,97 @@ instance Applicative (Fold a) where
 
 instance Monoid b => Monoid (Fold a b) where
     mempty = pure mempty
-    {-# INLINABLE mempty #-}
+    {-# INLINE mempty #-}
 
     mappend = liftA2 mappend
-    {-# INLINABLE mappend #-}
+    {-# INLINE mappend #-}
 
 instance Num b => Num (Fold a b) where
     fromInteger = pure . fromInteger
-    {-# INLINABLE fromInteger #-}
+    {-# INLINE fromInteger #-}
 
     negate = fmap negate
-    {-# INLINABLE negate #-}
+    {-# INLINE negate #-}
 
     abs = fmap abs
-    {-# INLINABLE abs #-}
+    {-# INLINE abs #-}
 
     signum = fmap signum
-    {-# INLINABLE signum #-}
+    {-# INLINE signum #-}
 
     (+) = liftA2 (+)
-    {-# INLINABLE (+) #-}
+    {-# INLINE (+) #-}
 
     (*) = liftA2 (*)
-    {-# INLINABLE (*) #-}
+    {-# INLINE (*) #-}
 
     (-) = liftA2 (-)
-    {-# INLINABLE (-) #-}
+    {-# INLINE (-) #-}
 
 instance Fractional b => Fractional (Fold a b) where
     fromRational = pure . fromRational
-    {-# INLINABLE fromRational #-}
+    {-# INLINE fromRational #-}
 
     recip = fmap recip
-    {-# INLINABLE recip #-}
+    {-# INLINE recip #-}
 
     (/) = liftA2 (/)
-    {-# INLINABLE (/) #-}
+    {-# INLINE (/) #-}
 
 instance Floating b => Floating (Fold a b) where
     pi = pure pi
-    {-# INLINABLE pi #-}
+    {-# INLINE pi #-}
 
     exp = fmap exp
-    {-# INLINABLE exp #-}
+    {-# INLINE exp #-}
 
     sqrt = fmap sqrt
-    {-# INLINABLE sqrt #-}
+    {-# INLINE sqrt #-}
 
     log = fmap log
-    {-# INLINABLE log #-}
+    {-# INLINE log #-}
 
     sin = fmap sin
-    {-# INLINABLE sin #-}
+    {-# INLINE sin #-}
 
     tan = fmap tan
-    {-# INLINABLE tan #-}
+    {-# INLINE tan #-}
 
     cos = fmap cos
-    {-# INLINABLE cos #-}
+    {-# INLINE cos #-}
 
     asin = fmap sin
-    {-# INLINABLE asin #-}
+    {-# INLINE asin #-}
 
     atan = fmap atan
-    {-# INLINABLE atan #-}
+    {-# INLINE atan #-}
 
     acos = fmap acos
-    {-# INLINABLE acos #-}
+    {-# INLINE acos #-}
 
     sinh = fmap sinh
-    {-# INLINABLE sinh #-}
+    {-# INLINE sinh #-}
 
     tanh = fmap tanh
-    {-# INLINABLE tanh #-}
+    {-# INLINE tanh #-}
 
     cosh = fmap cosh
-    {-# INLINABLE cosh #-}
+    {-# INLINE cosh #-}
 
     asinh = fmap asinh
-    {-# INLINABLE asinh #-}
+    {-# INLINE asinh #-}
 
     atanh = fmap atanh
-    {-# INLINABLE atanh #-}
+    {-# INLINE atanh #-}
 
     acosh = fmap acosh
-    {-# INLINABLE acosh #-}
+    {-# INLINE acosh #-}
 
     (**) = liftA2 (**)
-    {-# INLINABLE (**) #-}
+    {-# INLINE (**) #-}
 
     logBase = liftA2 logBase
-    {-# INLINABLE logBase #-}
+    {-# INLINE logBase #-}
 
 {-| Like 'Fold', but monadic.
 
@@ -308,11 +308,11 @@ instance Monad m => Functor (FoldM m a) where
         done' x = do
             b <- done x
             return $! f b
-    {-# INLINABLE fmap #-}
+    {-# INLINE fmap #-}
 
 instance Monad m => Applicative (FoldM m a) where
     pure b = FoldM (\() _ -> return ()) (return ()) (\() -> return b)
-    {-# INLINABLE pure #-}
+    {-# INLINE pure #-}
 
     (FoldM stepL beginL doneL) <*> (FoldM stepR beginR doneR) =
         let step (Pair xL xR) a = do
@@ -328,7 +328,7 @@ instance Monad m => Applicative (FoldM m a) where
                 x <- doneR xR
                 return $! f x
         in  FoldM step begin done
-    {-# INLINABLE (<*>) #-}
+    {-# INLINE (<*>) #-}
 
 instance Monad m => Profunctor (FoldM m) where
     rmap = fmap
@@ -336,97 +336,97 @@ instance Monad m => Profunctor (FoldM m) where
 
 instance (Monoid b, Monad m) => Monoid (FoldM m a b) where
     mempty = pure mempty
-    {-# INLINABLE mempty #-}
+    {-# INLINE mempty #-}
 
     mappend = liftA2 mappend
-    {-# INLINABLE mappend #-}
+    {-# INLINE mappend #-}
 
 instance (Monad m, Num b) => Num (FoldM m a b) where
     fromInteger = pure . fromInteger
-    {-# INLINABLE fromInteger #-}
+    {-# INLINE fromInteger #-}
 
     negate = fmap negate
-    {-# INLINABLE negate #-}
+    {-# INLINE negate #-}
 
     abs = fmap abs
-    {-# INLINABLE abs #-}
+    {-# INLINE abs #-}
 
     signum = fmap signum
-    {-# INLINABLE signum #-}
+    {-# INLINE signum #-}
 
     (+) = liftA2 (+)
-    {-# INLINABLE (+) #-}
+    {-# INLINE (+) #-}
 
     (*) = liftA2 (*)
-    {-# INLINABLE (*) #-}
+    {-# INLINE (*) #-}
 
     (-) = liftA2 (-)
-    {-# INLINABLE (-) #-}
+    {-# INLINE (-) #-}
 
 instance (Monad m, Fractional b) => Fractional (FoldM m a b) where
     fromRational = pure . fromRational
-    {-# INLINABLE fromRational #-}
+    {-# INLINE fromRational #-}
 
     recip = fmap recip
-    {-# INLINABLE recip #-}
+    {-# INLINE recip #-}
 
     (/) = liftA2 (/)
-    {-# INLINABLE (/) #-}
+    {-# INLINE (/) #-}
 
 instance (Monad m, Floating b) => Floating (FoldM m a b) where
     pi = pure pi
-    {-# INLINABLE pi #-}
+    {-# INLINE pi #-}
 
     exp = fmap exp
-    {-# INLINABLE exp #-}
+    {-# INLINE exp #-}
 
     sqrt = fmap sqrt
-    {-# INLINABLE sqrt #-}
+    {-# INLINE sqrt #-}
 
     log = fmap log
-    {-# INLINABLE log #-}
+    {-# INLINE log #-}
 
     sin = fmap sin
-    {-# INLINABLE sin #-}
+    {-# INLINE sin #-}
 
     tan = fmap tan
-    {-# INLINABLE tan #-}
+    {-# INLINE tan #-}
 
     cos = fmap cos
-    {-# INLINABLE cos #-}
+    {-# INLINE cos #-}
 
     asin = fmap sin
-    {-# INLINABLE asin #-}
+    {-# INLINE asin #-}
 
     atan = fmap atan
-    {-# INLINABLE atan #-}
+    {-# INLINE atan #-}
 
     acos = fmap acos
-    {-# INLINABLE acos #-}
+    {-# INLINE acos #-}
 
     sinh = fmap sinh
-    {-# INLINABLE sinh #-}
+    {-# INLINE sinh #-}
 
     tanh = fmap tanh
-    {-# INLINABLE tanh #-}
+    {-# INLINE tanh #-}
 
     cosh = fmap cosh
-    {-# INLINABLE cosh #-}
+    {-# INLINE cosh #-}
 
     asinh = fmap asinh
-    {-# INLINABLE asinh #-}
+    {-# INLINE asinh #-}
 
     atanh = fmap atanh
-    {-# INLINABLE atanh #-}
+    {-# INLINE atanh #-}
 
     acosh = fmap acosh
-    {-# INLINABLE acosh #-}
+    {-# INLINE acosh #-}
 
     (**) = liftA2 (**)
-    {-# INLINABLE (**) #-}
+    {-# INLINE (**) #-}
 
     logBase = liftA2 logBase
-    {-# INLINABLE logBase #-}
+    {-# INLINE logBase #-}
 
 -- | Apply a strict left 'Fold' to a 'Foldable' container
 fold :: Foldable f => Fold a b -> f a -> b
@@ -1023,10 +1023,10 @@ newtype EndoM m a = EndoM { appEndoM :: a -> m a }
 
 instance Monad m => Monoid (EndoM m a) where
     mempty = EndoM return
-    {-# INLINABLE mempty #-}
+    {-# INLINE mempty #-}
 
     mappend (EndoM f) (EndoM g) = EndoM (f <=< g)
-    {-# INLINABLE mappend #-}
+    {-# INLINE mappend #-}
 
 {-| A Handler for the upstream input of `FoldM`
 
