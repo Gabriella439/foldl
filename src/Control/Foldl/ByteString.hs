@@ -3,6 +3,7 @@
 module Control.Foldl.ByteString (
     -- * Folding
       fold
+    , foldM
 
     -- * Folds
     , head
@@ -28,7 +29,7 @@ module Control.Foldl.ByteString (
     , module Data.Word
     ) where
 
-import Control.Foldl (Fold)
+import Control.Foldl (Fold, FoldM)
 import Control.Foldl.Internal (Maybe'(..), lazy, strict, Either'(..), hush)
 import qualified Control.Foldl as L
 import Data.ByteString (ByteString)
@@ -43,6 +44,17 @@ import Prelude hiding (
 fold :: Fold ByteString a -> Lazy.ByteString -> a
 fold (L.Fold step begin done) as = done (Lazy.foldlChunks step begin as)
 {-# INLINABLE fold #-}
+
+-- | Apply a strict monadic left 'FoldM' to a lazy bytestring
+foldM :: Monad m => FoldM m ByteString a -> Lazy.ByteString -> m a
+foldM (L.FoldM step begin done) as = do
+    x <- Lazy.foldlChunks step' begin as
+    done x
+  where
+    step' mx bs = do
+      x <- mx
+      step x bs
+{-# INLINABLE foldM #-}
 
 {-| Get the first byte of a byte stream or return 'Nothing' if the stream is
     empty
