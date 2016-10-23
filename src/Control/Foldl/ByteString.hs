@@ -53,7 +53,7 @@ foldM (L.FoldM step begin done) as = do
   where
     step' mx bs = do
       x <- mx
-      step x bs
+      x `seq` step x bs
 {-# INLINABLE foldM #-}
 
 {-| Get the first byte of a byte stream or return 'Nothing' if the stream is
