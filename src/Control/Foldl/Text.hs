@@ -3,6 +3,7 @@
 module Control.Foldl.Text (
     -- * Folding
       fold
+    , foldM
 
     -- * Folds
     , head
@@ -27,7 +28,7 @@ module Control.Foldl.Text (
     , module Data.Text
     ) where
 
-import Control.Foldl (Fold)
+import Control.Foldl (Fold, FoldM)
 import Control.Foldl.Internal (Maybe'(..), lazy, strict, Either'(..), hush)
 import qualified Control.Foldl as L
 import Data.Text (Text)
@@ -40,6 +41,17 @@ import Prelude hiding (
 fold :: Fold Text a -> Lazy.Text -> a
 fold (L.Fold step begin done) as = done (Lazy.foldlChunks step begin as)
 {-# INLINABLE fold #-}
+
+-- | Apply a strict monadic left 'FoldM' to lazy text
+foldM :: Monad m => FoldM m Text a -> Lazy.Text -> m a
+foldM (L.FoldM step begin done) as = do
+    x <- Lazy.foldlChunks step' begin as
+    done x
+  where
+    step' mx bs = do
+      x <- mx
+      x `seq` step x bs
+{-# INLINABLE foldM #-}
 
 {-| Get the first character of a text stream or return 'Nothing' if the stream
     is empty
