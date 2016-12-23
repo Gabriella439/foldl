@@ -66,6 +66,8 @@ module Control.Foldl (
     , sum
     , product
     , mean
+    , variance
+    , std
     , maximum
     , maximumBy
     , minimum
@@ -559,6 +561,29 @@ mean = Fold step begin done
     step (Pair x n) y = Pair ((x * n + y) / (n + 1)) (n + 1)
     done (Pair x _) = x
 {-# INLINABLE mean #-}
+
+-- | Compute a numerically stable (population) variance over all elements
+variance :: Fractional a => Fold a a
+variance = Fold step begin done
+  where
+    begin = Pair3 0 0 0
+
+    step (Pair3 n mean_ m2) x = Pair3 n' mean' m2'
+      where
+        n'     = n + 1
+        mean'  = (n * mean_ + x) / (n + 1)
+        delta  = x - mean_
+        m2'    = m2 + delta * delta * n / (n + 1)
+
+    done (Pair3 n _ m2) = m2 / n
+{-# INLINABLE variance #-}
+
+{-| Compute a numerically stable (population) standard deviation over all
+    elements
+-}
+std :: Floating a => Fold a a
+std = sqrt variance
+{-# INLINABLE std #-}
 
 -- | Computes the maximum element
 maximum :: Ord a => Fold a (Maybe a)
