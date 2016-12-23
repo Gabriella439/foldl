@@ -65,6 +65,7 @@ module Control.Foldl (
     , any
     , sum
     , product
+    , mean
     , maximum
     , maximumBy
     , minimum
@@ -545,10 +546,19 @@ sum :: Num a => Fold a a
 sum = Fold (+) 0 id
 {-# INLINABLE sum #-}
 
--- | Computes the product all elements
+-- | Computes the product of all elements
 product :: Num a => Fold a a
 product = Fold (*) 1 id
 {-# INLINABLE product #-}
+
+-- | Compute a numerically stable arithmetic mean of all elements
+mean :: Fractional a => Fold a a
+mean = Fold step begin done
+  where
+    begin = Pair 0 0
+    step (Pair x n) y = Pair ((x * n + y) / (n + 1)) (n + 1)
+    done (Pair x _) = x
+{-# INLINABLE mean #-}
 
 -- | Computes the maximum element
 maximum :: Ord a => Fold a (Maybe a)
