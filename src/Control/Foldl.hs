@@ -47,6 +47,7 @@ module Control.Foldl (
 
     -- * Folding
     , fold
+    , foldOfWith
     , foldM
     , scan
 
@@ -1047,6 +1048,15 @@ handles k (Fold step begin done) = Fold step' begin done
   where
     step' = flip (appEndo . getDual . getConst . k (Const . Dual . Endo . flip step))
 {-# INLINABLE handles #-}
+
+{- | @{foldOfWith f folder xs} folds all values from a Lens, Traversal, Prism or Fold with the given folder
+
+>>> foldOfWith f folder xs == L.fold folder (xs^..f)
+
+-}
+foldOfWith :: (forall f. (Contravariant f, Applicative f) => (a -> f a) -> s -> f s) -> Fold a b -> s -> b
+foldOfWith l (Fold step begin done) =
+  done . flip appEndo begin . getDual . getConst . l (Const . Dual . Endo . flip step)
 
 {-|
 > instance Monad m => Monoid (EndoM m a) where
