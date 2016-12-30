@@ -1051,6 +1051,12 @@ handles k (Fold step begin done) = Fold step' begin done
 
 {- | @{foldOver f folder xs} folds all values from a Lens, Traversal, Prism or Fold with the given folder
 
+>>> foldOver (_Just . both) L.sum (Just (2, 3))
+5
+
+>>> foldOver (_Just . both) L.sum Nothing
+0
+
 > L.foldOver f folder xs == L.fold folder (xs^..f)
 
 > L.foldOver (folded.f) folder == L.fold (handles f folder)
