@@ -1056,7 +1056,7 @@ handles k (Fold step begin done) = Fold step' begin done
 > foldOfWith (folded.f) folder xs == L.fold (handles f folder) xs
 
 -}
-foldOfWith :: (forall f. (Contravariant f, Applicative f) => (a -> f a) -> s -> f s) -> Fold a b -> s -> b
+foldOfWith :: Handler s a -> Fold a b -> s -> b
 foldOfWith l (Fold step begin done) =
   done . flip appEndo begin . getDual . getConst . l (Const . Dual . Endo . flip step)
 {-# INLINABLE foldOfWith #-}
