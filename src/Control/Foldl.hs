@@ -47,7 +47,7 @@ module Control.Foldl (
 
     -- * Folding
     , fold
-    , foldOfWith
+    , foldOver
     , foldM
     , scan
 
@@ -1049,17 +1049,17 @@ handles k (Fold step begin done) = Fold step' begin done
     step' = flip (appEndo . getDual . getConst . k (Const . Dual . Endo . flip step))
 {-# INLINABLE handles #-}
 
-{- | @{foldOfWith f folder xs} folds all values from a Lens, Traversal, Prism or Fold with the given folder
+{- | @{foldOver f folder xs} folds all values from a Lens, Traversal, Prism or Fold with the given folder
 
-> foldOfWith f folder xs == L.fold folder (xs^..f)
+> foldOver f folder xs == L.fold folder (xs^..f)
 
-> foldOfWith (folded.f) folder xs == L.fold (handles f folder) xs
+> foldOver (folded.f) folder xs == L.fold (handles f folder) xs
 
 -}
-foldOfWith :: Handler s a -> Fold a b -> s -> b
-foldOfWith l (Fold step begin done) =
+foldOver :: Handler s a -> Fold a b -> s -> b
+foldOver l (Fold step begin done) =
   done . flip appEndo begin . getDual . getConst . l (Const . Dual . Endo . flip step)
-{-# INLINABLE foldOfWith #-}
+{-# INLINABLE foldOver #-}
 
 {-|
 > instance Monad m => Monoid (EndoM m a) where
