@@ -1051,9 +1051,11 @@ handles k (Fold step begin done) = Fold step' begin done
 
 {- | @{foldOver f folder xs} folds all values from a Lens, Traversal, Prism or Fold with the given folder
 
-> foldOver f folder xs == L.fold folder (xs^..f)
+> L.foldOver f folder xs == L.fold folder (xs^..f)
 
-> foldOver (folded.f) folder xs == L.fold (handles f folder) xs
+> L.foldOver (folded.f) folder == L.fold (handles f folder)
+
+> L.foldOver folded == L.fold
 
 -}
 foldOver :: Handler s a -> Fold a b -> s -> b
