@@ -1051,9 +1051,9 @@ handles k (Fold step begin done) = Fold step' begin done
 
 {- | @{foldOfWith f folder xs} folds all values from a Lens, Traversal, Prism or Fold with the given folder
 
->>> foldOfWith f folder xs == L.fold folder (xs^..f)
+> foldOfWith f folder xs == L.fold folder (xs^..f)
 
->>> foldOfWith (folded.f) folder xs == L.fold (handles f folder) xs
+> foldOfWith (folded.f) folder xs == L.fold (handles f folder) xs
 
 -}
 foldOfWith :: (forall f. (Contravariant f, Applicative f) => (a -> f a) -> s -> f s) -> Fold a b -> s -> b
