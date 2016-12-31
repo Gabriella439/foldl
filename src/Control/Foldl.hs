@@ -110,9 +110,11 @@ module Control.Foldl (
     , premapM
     , Handler
     , handles
+    , foldOver
     , EndoM(..)
     , HandlerM
     , handlesM
+    , foldOverM
     , folded
     , filtered
 
@@ -1048,6 +1050,26 @@ handles k (Fold step begin done) = Fold step' begin done
     step' = flip (appEndo . getDual . getConst . k (Const . Dual . Endo . flip step))
 {-# INLINABLE handles #-}
 
+{- | @{foldOver f folder xs} folds all values from a Lens, Traversal, Prism or Fold with the given folder
+
+>>> foldOver (_Just . both) L.sum (Just (2, 3))
+5
+
+>>> foldOver (_Just . both) L.sum Nothing
+0
+
+> L.foldOver f folder xs == L.fold folder (xs^..f)
+
+> L.foldOver (folded.f) folder == L.fold (handles f folder)
+
+> L.foldOver folded == L.fold
+
+-}
+foldOver :: Handler s a -> Fold a b -> s -> b
+foldOver l (Fold step begin done) =
+  done . flip appEndo begin . getDual . getConst . l (Const . Dual . Endo . flip step)
+{-# INLINABLE foldOver #-}
+
 {-|
 > instance Monad m => Monoid (EndoM m a) where
 >     mempty = EndoM return
@@ -1092,6 +1114,20 @@ handlesM k (FoldM step begin done) = FoldM step' begin done
   where
     step' = flip (appEndoM . getDual . getConst . k (Const . Dual . EndoM . flip step))
 {-# INLINABLE handlesM #-}
+
+{- | @{foldOverM f folder xs} folds all values from a Lens, Traversal, Prism or Fold monadically with the given folder
+
+> L.foldOverM (folded.f) folder == L.foldM (handlesM f folder)
+
+> L.foldOverM folded == L.foldM
+
+-}
+foldOverM :: Monad m => HandlerM m s a -> FoldM m a b -> s -> m b
+foldOverM l (FoldM step begin done) s = do
+  b <- begin
+  r <- (flip appEndoM b . getDual . getConst . l (Const . Dual . EndoM . flip step)) s
+  done r
+{-# INLINABLE foldOverM #-}
 
 {-|
 > folded :: Foldable t => Fold (t a) a
