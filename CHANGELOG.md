@@ -1,3 +1,14 @@
+1.2.2
+
+* Add numerically stable `mean`, `variance`, and `std` folds
+* Add `Control.Foldl.{Text,ByteString}.foldM`
+* Add `foldOver`/`foldOverM`
+
+1.2.1
+
+* Performance improvements
+* Re-export `filtered`
+
 1.2.0
 
 * Breaking change: Fix `handles` to fold things in the correct order (was
