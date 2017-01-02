@@ -76,6 +76,7 @@ module Control.Foldl (
     , notElem
     , find
     , index
+    , lookup
     , elemIndex
     , findIndex
     , random
@@ -154,6 +155,7 @@ import Prelude hiding
     , minimum
     , elem
     , notElem
+    , lookup
     )
 
 import qualified Data.Foldable               as F
@@ -671,6 +673,20 @@ findIndex predicate = Fold step (Left' 0) hush
             else Left' (i + 1)
         _       -> x
 {-# INLINABLE findIndex #-}
+
+
+{-| @(lookup a)@ returns the element paired with the first matching item, or
+    'Nothing' if none matches
+-}
+lookup :: Eq a => a -> Fold (a,b) (Maybe b)
+lookup a0 = Fold step Nothing' lazy
+  where
+    step x (a,b) = case x of
+      Nothing' -> if a == a0
+        then Just' b
+        else Nothing'
+      _ -> x
+{-# INLINABLE lookup #-}
 
 data Pair3 a b c = Pair3 !a !b !c
 
