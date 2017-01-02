@@ -155,6 +155,7 @@ import Prelude hiding
     , minimum
     , elem
     , notElem
+    , lookup
     )
 
 import qualified Data.Foldable               as F
@@ -685,7 +686,7 @@ lookup a0 = Fold step Nothing' lazy
         then Just' b
         else Nothing'
       _ -> x
-
+{-# INLINABLE lookup #-}
 
 data Pair3 a b c = Pair3 !a !b !c
 
