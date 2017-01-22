@@ -874,18 +874,18 @@ vector = FoldM step begin done
 > impurely Pipes.Prelude.foldM
 >     :: Monad m => FoldM m a b -> Producer a m () -> m b
 
-    Similarly the @ofoldlUnwrap@ and @ofoldMUnwrap@ functions from the
-    @monotraversable@ package are written to interoperate with this library:
+    Other streaming libraries supporting 'purely' and 'impurely' include @io-streams@ and @streaming@. 
+    So for example we have:
 
-> ofoldlUnwrap
->     :: MonoFoldable mono
->     => (x -> Element mono -> x) -> x -> (x -> b) -> mono -> b
+> purely System.IO.Streams.fold_ 
+>     :: Fold a b -> Streams.InputStream a -> IO b
 >
-> ofoldMUnwrap
->     :: (Monad m, MonoFoldable mono)
->     => (x -> Element mono -> m x) -> m x -> (x -> m b) -> mono -> m b
+> impurely System.IO.Streams.foldM_ 
+>     :: FoldM IO a b -> Streams.InputStream a -> IO b
 
-    You can wrap these to accept 'Fold' or 'FoldM', too:
+    The @monotraversable@ package makes it convenient to apply a 
+    'Fold' or 'FoldM' to pure containers that do not allow 
+    a general 'Foldable' instance, like unboxed vectors:
 
 > purely ofoldlUnwrap
 >     :: MonoFoldable mono
