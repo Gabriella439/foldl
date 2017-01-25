@@ -1066,7 +1066,7 @@ handles k (Fold step begin done) = Fold step' begin done
     step' = flip (appEndo . getDual . getConst . k (Const . Dual . Endo . flip step))
 {-# INLINABLE handles #-}
 
-{- | @{foldOver f folder xs} folds all values from a Lens, Traversal, Prism or Fold with the given folder
+{- | @(foldOver f folder xs)@ folds all values from a Lens, Traversal, Prism or Fold with the given folder
 
 >>> foldOver (_Just . both) L.sum (Just (2, 3))
 5
@@ -1131,7 +1131,7 @@ handlesM k (FoldM step begin done) = FoldM step' begin done
     step' = flip (appEndoM . getDual . getConst . k (Const . Dual . EndoM . flip step))
 {-# INLINABLE handlesM #-}
 
-{- | @{foldOverM f folder xs} folds all values from a Lens, Traversal, Prism or Fold monadically with the given folder
+{- | @(foldOverM f folder xs)@ folds all values from a Lens, Traversal, Prism or Fold monadically with the given folder
 
 > L.foldOverM (folded.f) folder == L.foldM (handlesM f folder)
 
