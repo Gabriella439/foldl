@@ -157,6 +157,7 @@ import Prelude hiding
     , elem
     , notElem
     , lookup
+    , map
     )
 
 import qualified Data.Foldable               as F
