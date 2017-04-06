@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Control.Foldl
+import Control.Foldl hiding (map)
 import Criterion.Main
 import qualified Data.List
 import Prelude hiding (length, sum)
