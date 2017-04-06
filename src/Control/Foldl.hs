@@ -835,6 +835,7 @@ map = Fold step begin done
     begin = mempty
     step m (k, v) = Map.insert k v m
     done = id
+{-# INLINABLE map #-}
 
 maxChunkSize :: Int
 maxChunkSize = 8 * 1024 * 1024
