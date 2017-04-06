@@ -94,6 +94,9 @@ module Control.Foldl (
     , nub
     , eqNub
     , set
+    , hashSet
+    , map
+    , hashMap
     , vector
 
     -- * Utilities
@@ -139,6 +142,7 @@ import Data.Profunctor
 import Data.Sequence ((|>))
 import Data.Vector.Generic (Vector, Mutable)
 import Data.Vector.Generic.Mutable (MVector)
+import Data.Hashable (Hashable)
 import System.Random.MWC (GenIO, createSystemRandom, uniformR)
 import Prelude hiding
     ( head
@@ -156,12 +160,16 @@ import Prelude hiding
     , elem
     , notElem
     , lookup
+    , map
     )
 
 import qualified Data.Foldable               as F
 import qualified Data.List                   as List
 import qualified Data.Sequence               as Seq
 import qualified Data.Set                    as Set
+import qualified Data.Map.Strict             as Map
+import qualified Data.HashMap.Strict         as HashMap
+import qualified Data.HashSet                as HashSet
 import qualified Data.Vector.Generic         as V
 import qualified Data.Vector.Generic.Mutable as M
 
@@ -823,6 +831,33 @@ eqNub = Fold step (Pair [] id) fin
 set :: Ord a => Fold a (Set.Set a)
 set = Fold (flip Set.insert) Set.empty id
 {-# INLINABLE set #-}
+
+-- | Fold values into a hash-set
+hashSet :: (Eq a, Hashable a) => Fold a (HashSet.HashSet a)
+hashSet = Fold (flip HashSet.insert) HashSet.empty id
+{-# INLINABLE hashSet #-}
+
+{-|
+Fold pairs into a map.
+-}
+map :: Ord a => Fold (a, b) (Map.Map a b)
+map = Fold step begin done
+  where
+    begin = mempty
+    step m (k, v) = Map.insert k v m
+    done = id
+{-# INLINABLE map #-}
+
+{-|
+Fold pairs into a hash-map.
+-}
+hashMap :: (Eq a, Hashable a) => Fold (a, b) (HashMap.HashMap a b)
+hashMap = Fold step begin done
+  where
+    begin = mempty
+    step m (k, v) = HashMap.insert k v m
+    done = id
+{-# INLINABLE hashMap #-}
 
 maxChunkSize :: Int
 maxChunkSize = 8 * 1024 * 1024
