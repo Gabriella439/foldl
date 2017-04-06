@@ -162,6 +162,7 @@ import qualified Data.Foldable               as F
 import qualified Data.List                   as List
 import qualified Data.Sequence               as Seq
 import qualified Data.Set                    as Set
+import qualified Data.Map.Strict             as Map
 import qualified Data.Vector.Generic         as V
 import qualified Data.Vector.Generic.Mutable as M
 
@@ -845,6 +846,16 @@ vector = FoldM step begin done
         v <- V.freeze mv
         return (V.unsafeTake idx v)
 {-# INLINABLE vector #-}
+
+{-|
+Fold pairs into a map.
+-}
+map :: Ord a => Fold (a, b) (Map.Map a b)
+map = Fold step begin done
+  where
+    begin = id
+    step fn (k, v) = M.insert k v . fn
+    done fn = fn mempty
 
 {- $utilities
     'purely' and 'impurely' allow you to write folds compatible with the @foldl@
