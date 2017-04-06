@@ -94,6 +94,7 @@ module Control.Foldl (
     , nub
     , eqNub
     , set
+    , map
     , vector
 
     -- * Utilities
@@ -156,12 +157,14 @@ import Prelude hiding
     , elem
     , notElem
     , lookup
+    , map
     )
 
 import qualified Data.Foldable               as F
 import qualified Data.List                   as List
 import qualified Data.Sequence               as Seq
 import qualified Data.Set                    as Set
+import qualified Data.Map.Strict             as Map
 import qualified Data.Vector.Generic         as V
 import qualified Data.Vector.Generic.Mutable as M
 
@@ -823,6 +826,17 @@ eqNub = Fold step (Pair [] id) fin
 set :: Ord a => Fold a (Set.Set a)
 set = Fold (flip Set.insert) Set.empty id
 {-# INLINABLE set #-}
+
+{-|
+Fold pairs into a map.
+-}
+map :: Ord a => Fold (a, b) (Map.Map a b)
+map = Fold step begin done
+  where
+    begin = mempty
+    step m (k, v) = Map.insert k v m
+    done = id
+{-# INLINABLE map #-}
 
 maxChunkSize :: Int
 maxChunkSize = 8 * 1024 * 1024
