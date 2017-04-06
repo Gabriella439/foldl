@@ -49,6 +49,7 @@ module Control.Foldl (
     , fold
     , foldM
     , scan
+    , scannify
 
     -- * Folds
     , Control.Foldl.mconcat
@@ -468,6 +469,17 @@ scan (Fold step begin done) as = foldr cons nil as begin
     nil      x = done x:[]
     cons a k x = done x:(k $! step x a)
 {-# INLINE scan #-}
+
+-- | Convert a fold into a fold which produces all intermediate values in a list.
+--   Note that this derived fold will run the provided fold's finalizer function
+--   on every step; beware asymptotic inefficiency when applying to a fold which
+--   has a finalizer which runs in greater than constant time.
+scannify :: Fold a b -> Fold a [b]
+scannify (Fold step begin done) = Fold step' begin' done'
+  where
+    step' (x, list) a = (step x a, list . (done x :))
+    begin' = (begin, id)
+    done' (x, list) = done x : list []
 
 -- | Fold all values within a container using 'mappend' and 'mempty'
 mconcat :: Monoid a => Fold a a
