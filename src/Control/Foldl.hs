@@ -51,6 +51,8 @@ module Control.Foldl (
     , scan
 
     -- * Folds
+    , subfold
+    , subfoldM
     , Control.Foldl.mconcat
     , Control.Foldl.foldMap
     , head
@@ -468,6 +470,20 @@ scan (Fold step begin done) as = foldr cons nil as begin
     nil      x = done x:[]
     cons a k x = done x:(k $! step x a)
 {-# INLINE scan #-}
+
+-- | Fold over the elements inside a 'Foldable'.
+subfoldM :: (Monad m, Foldable f) => FoldM m a b -> FoldM m (f a) b
+subfoldM (FoldM step0 initial0 extract0) = FoldM step initial0 extract0
+  where
+    step = F.foldlM (\acc' x' -> acc' `seq` step0 acc' x')
+{-# INLINE subfoldM #-}
+
+-- | Fold over the elements inside a 'Foldable'.
+subfold :: (Foldable f) => Fold a b -> Fold (f a) b
+subfold (Fold step0 initial0 extract0) = Fold step initial0 extract0
+  where
+    step = F.foldl' (\acc' x' -> step0 acc' x')
+{-# INLINE subfold #-}
 
 -- | Fold all values within a container using 'mappend' and 'mempty'
 mconcat :: Monoid a => Fold a a
