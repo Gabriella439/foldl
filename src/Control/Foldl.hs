@@ -35,6 +35,7 @@
     executables that use this library to further improve performance.
 -}
 
+{-# LANGUAGE CPP                       #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE RankNTypes                #-}
@@ -49,6 +50,11 @@ module Control.Foldl (
     , fold
     , foldM
     , scan
+#if MIN_VERSION_base(4,8,0)
+    , prescan
+    , postscan
+#else
+#endif
 
     -- * Folds
     , Control.Foldl.mconcat
@@ -468,6 +474,37 @@ scan (Fold step begin done) as = foldr cons nil as begin
     nil      x = done x:[]
     cons a k x = done x:(k $! step x a)
 {-# INLINE scan #-}
+
+#if MIN_VERSION_base(4,8,0)
+{-| Convert a `Fold` into a prescan for any `Traversable` type
+
+    \"Prescan\" means that the last element of the scan is not included
+-}
+prescan :: Traversable t => Fold a b -> t a -> t b
+prescan (Fold step begin done) as = bs
+  where
+    step' x a = (x', b)
+      where
+        x' = step x a
+        b  = done x
+    (_, bs) = List.mapAccumL step' begin as
+{-# INLINE prescan #-}
+
+{-| Convert a `Fold` into a postscan for any `Traversable` type
+
+    \"Postscan\" means that the first element of the scan is not included
+-}
+postscan :: Traversable t => Fold a b -> t a -> t b
+postscan (Fold step begin done) as = bs
+  where
+    step' x a = (x', b)
+      where
+        x' = step x a
+        b  = done x'
+    (_, bs) = List.mapAccumL step' begin as
+{-# INLINE postscan #-}
+#else
+#endif
 
 -- | Fold all values within a container using 'mappend' and 'mempty'
 mconcat :: Monoid a => Fold a a
