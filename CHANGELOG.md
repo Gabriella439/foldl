@@ -1,3 +1,17 @@
+1.2.5
+
+* Add support for folding new containers: `hashSet`, `map`, and `hashMap`
+* Add `prescan`/`postscan` which generalize `scan` to `Traversable` types
+
+1.2.4
+
+* Add `lazy` folds for `Text` and `ByteString`
+* Documentation fixes and improvements
+
+1.2.3
+
+* Add `lookup`
+
 1.2.2
 
 * Add numerically stable `mean`, `variance`, and `std` folds
