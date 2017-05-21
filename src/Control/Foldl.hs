@@ -178,6 +178,8 @@ import qualified Data.HashMap.Strict         as HashMap
 import qualified Data.HashSet                as HashSet
 import qualified Data.Vector.Generic         as V
 import qualified Data.Vector.Generic.Mutable as M
+import qualified VectorBuilder.Builder
+import qualified VectorBuilder.Vector
 
 {-| Efficient representation of a left fold that preserves the fold's step
     function, initial accumulator, and extraction function
@@ -896,26 +898,15 @@ hashMap = Fold step begin done
     done = id
 {-# INLINABLE hashMap #-}
 
-maxChunkSize :: Int
-maxChunkSize = 8 * 1024 * 1024
-
 -- | Fold all values into a vector
-vector :: (PrimMonad m, Vector v a) => FoldM m a (v a)
-vector = FoldM step begin done
+vector :: Vector v a => Fold a (v a)
+vector = Fold step begin done
   where
-    begin = do
-        mv <- M.unsafeNew 10
-        return (Pair mv 0)
-    step (Pair mv idx) a = do
-        let len = M.length mv
-        mv' <- if idx >= len
-            then M.unsafeGrow mv (min len maxChunkSize)
-            else return mv
-        M.unsafeWrite mv' idx a
-        return (Pair mv' (idx + 1))
-    done (Pair mv idx) = do
-        v <- V.freeze mv
-        return (V.unsafeTake idx v)
+    begin = VectorBuilder.Builder.empty
+
+    step x a = x <> VectorBuilder.Builder.singleton a
+
+    done = VectorBuilder.Vector.build
 {-# INLINABLE vector #-}
 
 {- $utilities
