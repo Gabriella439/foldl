@@ -1,3 +1,7 @@
+1.3.0
+
+* BREAKING CHANGE: Change `vector` to be a pure `Fold` (which is faster, too!)
+
 1.2.5
 
 * Add support for folding new containers: `hashSet`, `map`, and `hashMap`
