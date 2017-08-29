@@ -418,7 +418,7 @@ instance (Monad m, Floating b) => Floating (FoldM m a b) where
     cos = fmap cos
     {-# INLINE cos #-}
 
-    asin = fmap sin
+    asin = fmap asin
     {-# INLINE asin #-}
 
     atan = fmap atan
