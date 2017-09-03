@@ -1,3 +1,7 @@
+1.3.1
+
+* BUG FIX: `asin` now correctly delegates to `fmap asin` and not `fmap sin`
+
 1.3.0
 
 * BREAKING CHANGE: Change `vector` to be a pure `Fold` (which is faster, too!)
