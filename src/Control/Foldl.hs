@@ -143,7 +143,8 @@ import Control.Comonad
 import Data.Foldable (Foldable)
 import Data.Functor.Identity (Identity, runIdentity)
 import Data.Functor.Contravariant (Contravariant(..))
-import Data.Monoid
+import Data.Monoid hiding ((<>))
+import Data.Semigroup (Semigroup(..))
 import Data.Profunctor
 import Data.Sequence ((|>))
 import Data.Vector.Generic (Vector, Mutable)
@@ -222,11 +223,15 @@ instance Applicative (Fold a) where
         in  Fold step begin done
     {-# INLINE (<*>) #-}
 
+instance Monoid b => Semigroup (Fold a b) where
+    (<>) = liftA2 mappend
+    {-# INLINE (<>) #-}
+
 instance Monoid b => Monoid (Fold a b) where
     mempty = pure mempty
     {-# INLINE mempty #-}
 
-    mappend = liftA2 mappend
+    mappend = (<>)
     {-# INLINE mappend #-}
 
 instance Num b => Num (Fold a b) where
@@ -356,6 +361,10 @@ instance Monad m => Applicative (FoldM m a) where
 instance Monad m => Profunctor (FoldM m) where
     rmap = fmap
     lmap = premapM
+
+instance (Monoid b, Monad m) => Semigroup (FoldM m a b) where
+    (<>) = liftA2 mappend
+    {-# INLINE (<>) #-}
 
 instance (Monoid b, Monad m) => Monoid (FoldM m a b) where
     mempty = pure mempty
@@ -1156,11 +1165,15 @@ foldOver l (Fold step begin done) =
 -}
 newtype EndoM m a = EndoM { appEndoM :: a -> m a }
 
+instance Monad m => Semigroup (EndoM m a) where
+    (EndoM f) <> (EndoM g) = EndoM (f <=< g)
+    {-# INLINE (<>) #-}
+
 instance Monad m => Monoid (EndoM m a) where
     mempty = EndoM return
     {-# INLINE mempty #-}
 
-    mappend (EndoM f) (EndoM g) = EndoM (f <=< g)
+    mappend = (<>)
     {-# INLINE mappend #-}
 
 {-| A Handler for the upstream input of `FoldM`
