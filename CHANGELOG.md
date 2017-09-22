@@ -1,3 +1,7 @@
+1.3.1
+
+* Compatibility with `Semigroup` becoming a super-class of `Monoid`
+
 1.3.0
 
 * BREAKING CHANGE: Change `vector` to be a pure `Fold` (which is faster, too!)
