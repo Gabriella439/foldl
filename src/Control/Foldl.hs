@@ -288,7 +288,7 @@ instance Floating b => Floating (Fold a b) where
     cos = fmap cos
     {-# INLINE cos #-}
 
-    asin = fmap sin
+    asin = fmap asin
     {-# INLINE asin #-}
 
     atan = fmap atan
