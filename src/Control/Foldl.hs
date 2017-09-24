@@ -104,6 +104,7 @@ module Control.Foldl (
     , map
     , hashMap
     , vector
+    , vectorM
 
     -- * Utilities
     -- $utilities
@@ -917,6 +918,31 @@ vector = Fold step begin done
 
     done = VectorBuilder.Vector.build
 {-# INLINABLE vector #-}
+
+maxChunkSize :: Int
+maxChunkSize = 8 * 1024 * 1024
+
+{-| Fold all values into a vector
+
+    This is more efficient than `vector` but is impure
+-}
+vectorM :: (PrimMonad m, Vector v a) => FoldM m a (v a)
+vectorM = FoldM step begin done
+  where
+    begin = do
+        mv <- M.unsafeNew 10
+        return (Pair mv 0)
+    step (Pair mv idx) a = do
+        let len = M.length mv
+        mv' <- if idx >= len
+            then M.unsafeGrow mv (min len maxChunkSize)
+            else return mv
+        M.unsafeWrite mv' idx a
+        return (Pair mv' (idx + 1))
+    done (Pair mv idx) = do
+        v <- V.freeze mv
+        return (V.unsafeTake idx v)
+{-# INLINABLE vectorM #-}
 
 {- $utilities
     'purely' and 'impurely' allow you to write folds compatible with the @foldl@
