@@ -104,6 +104,7 @@ module Control.Foldl (
     , map
     , hashMap
     , vector
+    , vectorM
 
     -- * Utilities
     -- $utilities
@@ -143,7 +144,8 @@ import Control.Comonad
 import Data.Foldable (Foldable)
 import Data.Functor.Identity (Identity, runIdentity)
 import Data.Functor.Contravariant (Contravariant(..))
-import Data.Monoid
+import Data.Monoid hiding ((<>))
+import Data.Semigroup (Semigroup(..))
 import Data.Profunctor
 import Data.Sequence ((|>))
 import Data.Vector.Generic (Vector, Mutable)
@@ -222,11 +224,15 @@ instance Applicative (Fold a) where
         in  Fold step begin done
     {-# INLINE (<*>) #-}
 
+instance Monoid b => Semigroup (Fold a b) where
+    (<>) = liftA2 mappend
+    {-# INLINE (<>) #-}
+
 instance Monoid b => Monoid (Fold a b) where
     mempty = pure mempty
     {-# INLINE mempty #-}
 
-    mappend = liftA2 mappend
+    mappend = (<>)
     {-# INLINE mappend #-}
 
 instance Num b => Num (Fold a b) where
@@ -283,7 +289,7 @@ instance Floating b => Floating (Fold a b) where
     cos = fmap cos
     {-# INLINE cos #-}
 
-    asin = fmap sin
+    asin = fmap asin
     {-# INLINE asin #-}
 
     atan = fmap atan
@@ -356,6 +362,10 @@ instance Monad m => Applicative (FoldM m a) where
 instance Monad m => Profunctor (FoldM m) where
     rmap = fmap
     lmap = premapM
+
+instance (Monoid b, Monad m) => Semigroup (FoldM m a b) where
+    (<>) = liftA2 mappend
+    {-# INLINE (<>) #-}
 
 instance (Monoid b, Monad m) => Monoid (FoldM m a b) where
     mempty = pure mempty
@@ -909,6 +919,31 @@ vector = Fold step begin done
     done = VectorBuilder.Vector.build
 {-# INLINABLE vector #-}
 
+maxChunkSize :: Int
+maxChunkSize = 8 * 1024 * 1024
+
+{-| Fold all values into a vector
+
+    This is more efficient than `vector` but is impure
+-}
+vectorM :: (PrimMonad m, Vector v a) => FoldM m a (v a)
+vectorM = FoldM step begin done
+  where
+    begin = do
+        mv <- M.unsafeNew 10
+        return (Pair mv 0)
+    step (Pair mv idx) a = do
+        let len = M.length mv
+        mv' <- if idx >= len
+            then M.unsafeGrow mv (min len maxChunkSize)
+            else return mv
+        M.unsafeWrite mv' idx a
+        return (Pair mv' (idx + 1))
+    done (Pair mv idx) = do
+        v <- V.freeze mv
+        return (V.unsafeTake idx v)
+{-# INLINABLE vectorM #-}
+
 {- $utilities
     'purely' and 'impurely' allow you to write folds compatible with the @foldl@
     library without incurring a @foldl@ dependency.  Write your fold to accept
@@ -1156,11 +1191,15 @@ foldOver l (Fold step begin done) =
 -}
 newtype EndoM m a = EndoM { appEndoM :: a -> m a }
 
+instance Monad m => Semigroup (EndoM m a) where
+    (EndoM f) <> (EndoM g) = EndoM (f <=< g)
+    {-# INLINE (<>) #-}
+
 instance Monad m => Monoid (EndoM m a) where
     mempty = EndoM return
     {-# INLINE mempty #-}
 
-    mappend (EndoM f) (EndoM g) = EndoM (f <=< g)
+    mappend = (<>)
     {-# INLINE mappend #-}
 
 {-| A Handler for the upstream input of `FoldM`

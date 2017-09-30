@@ -1,6 +1,11 @@
+1.3.2
+
+* Compatibility with `Semigroup` becoming a super-class of `Monoid`
+* Fix `asin` for `Fold`
+
 1.3.1
 
-* BUG FIX: `asin` now correctly delegates to `fmap asin` and not `fmap sin`
+* Fix `asin` for `FoldM`
 
 1.3.0
 
