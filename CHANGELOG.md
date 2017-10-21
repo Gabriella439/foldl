@@ -1,3 +1,7 @@
+1.3.3
+
+* Add back the old `vector` as `vectorM`
+
 1.3.2
 
 * Compatibility with `Semigroup` becoming a super-class of `Monoid`
