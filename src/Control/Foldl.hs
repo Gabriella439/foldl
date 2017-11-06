@@ -119,6 +119,8 @@ module Control.Foldl (
     , _Fold1
     , premap
     , premapM
+    , prefilter
+    , prefilterM
     , Handler
     , handles
     , foldOver
@@ -1122,6 +1124,29 @@ premapM f (FoldM step begin done) = FoldM step' begin done
   where
     step' x a = step x (f a)
 {-# INLINABLE premapM #-}
+
+{-| @(prefilter f folder)@ returns a new 'Fold' where the folder's input is used
+  only when the input satisfies a predicate f
+
+  This can also be done with 'handles' (@handles (filtered f)@) but @prefilter@
+  does not need you to depend on a lens library.
+-}
+prefilter :: (a -> Bool) -> Fold a r -> Fold a r
+prefilter f (Fold step begin done) = Fold step' begin done
+  where
+    step' x a = if f a then step x a else x
+{-# INLINABLE prefilter #-}
+
+{-| @(prefilterM f folder)@ returns a new 'Fold' where the folder's input is used
+  only when the input satisfies a monadic predicate f.
+-}
+prefilterM :: (Monad m) => (a -> m Bool) -> FoldM m a r -> FoldM m a r
+prefilterM f (FoldM step begin done) = FoldM step' begin done
+  where
+    step' x a = do
+      use <- f a
+      if use then step x a else return x
+{-# INLINABLE prefilterM #-}
 
 {-| A handler for the upstream input of a `Fold`
 
