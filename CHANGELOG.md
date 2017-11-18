@@ -1,3 +1,7 @@
+1.3.4
+
+* Add `prefilter` and `prefilterM`
+
 1.3.3
 
 * Add back the old `vector` as `vectorM`
