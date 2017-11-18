@@ -14,6 +14,9 @@ let
       haskellPackages = pkgs.haskellPackages.override {
         overrides = haskellPackagesNew: haskellPackagesOld: {
           foldl = haskellPackagesNew.callPackage ./default.nix { };
+
+          # `vector-builder`'s test suite depends on `foldl`
+          vector-builder = pkgs.haskell.lib.dontCheck haskellPackagesOld.vector-builder;
         };
       };
     };
