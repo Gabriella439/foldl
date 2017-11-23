@@ -208,6 +208,10 @@ instance Profunctor Fold where
     lmap = premap
     rmap = fmap
 
+instance Choice Fold where
+  right' (Fold step begin done) = Fold (liftA2 step) (Right begin) (fmap done)
+  {-# INLINE right' #-}
+
 instance Comonad (Fold a) where
     extract (Fold _ begin done) = done begin
     {-#  INLINE extract #-}
