@@ -1,3 +1,7 @@
+1.3.5
+
+* Add `Choice` instance for `Fold`
+
 1.3.4
 
 * Add `prefilter` and `prefilterM`
