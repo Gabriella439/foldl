@@ -1,3 +1,7 @@
+1.3.6
+
+* Documentation improvements
+
 1.3.5
 
 * Add `Choice` instance for `Fold`

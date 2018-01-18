@@ -5,7 +5,7 @@
 }:
 mkDerivation {
   pname = "foldl";
-  version = "1.3.5";
+  version = "1.3.6";
   src = ./.;
   libraryHaskellDepends = [
     base bytestring comonad containers contravariant hashable
