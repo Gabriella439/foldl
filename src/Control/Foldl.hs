@@ -131,7 +131,7 @@ module Control.Foldl (
     , foldOverM
     , folded
     , filtered
-    , foldWithGroupBy
+    , groupBy
 
     -- * Re-exports
     -- $reexports
@@ -1324,11 +1324,11 @@ projection function. Returns the folded result grouped as a map keyed by the
 group.
 
 -}
-foldWithGroupBy :: Ord g => (a -> g) -> Fold a r -> Fold a (Map g r)
-foldWithGroupBy grouper (Fold f i e) = Fold f' mempty (fmap e)
+groupBy :: Ord g => (a -> g) -> Fold a r -> Fold a (Map g r)
+groupBy grouper (Fold f i e) = Fold f' mempty (fmap e)
   where
     f' !m !a = alter (\o -> Just (f (fromMaybe i o) a)) (grouper a) m
-{-# INLINABLE foldWithGroupBy #-}
+{-# INLINABLE groupBy #-}
 
 {- $reexports
     @Control.Monad.Primitive@ re-exports the 'PrimMonad' type class
