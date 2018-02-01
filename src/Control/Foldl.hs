@@ -35,6 +35,7 @@
     executables that use this library to further improve performance.
 -}
 
+{-# LANGUAGE BangPatterns              #-}
 {-# LANGUAGE CPP                       #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts          #-}
@@ -130,6 +131,7 @@ module Control.Foldl (
     , foldOverM
     , folded
     , filtered
+    , groupBy
 
     -- * Re-exports
     -- $reexports
@@ -146,6 +148,8 @@ import Control.Comonad
 import Data.Foldable (Foldable)
 import Data.Functor.Identity (Identity, runIdentity)
 import Data.Functor.Contravariant (Contravariant(..))
+import Data.Map.Strict (Map, alter)
+import Data.Maybe (fromMaybe)
 import Data.Monoid hiding ((<>))
 import Data.Semigroup (Semigroup(..))
 import Data.Profunctor
@@ -1314,6 +1318,17 @@ filtered p k x
     | p x = k x
     | otherwise = mempty
 {-# INLINABLE filtered #-}
+
+{-| Perform a 'Fold' while grouping the data according to a specified group
+projection function. Returns the folded result grouped as a map keyed by the
+group.
+
+-}
+groupBy :: Ord g => (a -> g) -> Fold a r -> Fold a (Map g r)
+groupBy grouper (Fold f i e) = Fold f' mempty (fmap e)
+  where
+    f' !m !a = alter (\o -> Just (f (fromMaybe i o) a)) (grouper a) m
+{-# INLINABLE groupBy #-}
 
 {- $reexports
     @Control.Monad.Primitive@ re-exports the 'PrimMonad' type class
