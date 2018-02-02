@@ -1,3 +1,7 @@
+1.3.7
+
+* Add `groupBy`
+
 1.3.6
 
 * Documentation improvements
