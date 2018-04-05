@@ -1,3 +1,7 @@
+Unreleased
+
+* Change type of `premapM` to accept a monadic function
+
 1.3.7
 
 * Add `groupBy`

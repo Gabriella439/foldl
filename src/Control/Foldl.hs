@@ -371,7 +371,9 @@ instance Monad m => Applicative (FoldM m a) where
 
 instance Monad m => Profunctor (FoldM m) where
     rmap = fmap
-    lmap = premapM
+    lmap f (FoldM step begin done) = FoldM step' begin done
+      where
+        step' x a = step x (f a)
 
 instance (Monoid b, Monad m) => Semigroup (FoldM m a b) where
     (<>) = liftA2 mappend
@@ -982,17 +984,17 @@ vectorM = FoldM step begin done
 > impurely Pipes.Prelude.foldM
 >     :: Monad m => FoldM m a b -> Producer a m () -> m b
 
-    Other streaming libraries supporting 'purely' and 'impurely' include @io-streams@ and @streaming@. 
+    Other streaming libraries supporting 'purely' and 'impurely' include @io-streams@ and @streaming@.
     So for example we have:
 
-> purely System.IO.Streams.fold_ 
+> purely System.IO.Streams.fold_
 >     :: Fold a b -> Streams.InputStream a -> IO b
 >
-> impurely System.IO.Streams.foldM_ 
+> impurely System.IO.Streams.foldM_
 >     :: FoldM IO a b -> Streams.InputStream a -> IO b
 
-    The @monotraversable@ package makes it convenient to apply a 
-    'Fold' or 'FoldM' to pure containers that do not allow 
+    The @monotraversable@ package makes it convenient to apply a
+    'Fold' or 'FoldM' to pure containers that do not allow
     a general 'Foldable' instance, like unboxed vectors:
 
 > purely ofoldlUnwrap
@@ -1117,20 +1119,18 @@ premap f (Fold step begin done) = Fold step' begin done
 {-| @(premapM f folder)@ returns a new 'FoldM' where f is applied to each input
     element
 
-> foldM (premapM f folder) list = foldM folder (map f list)
-
-> premapM id = id
+> premapM return = id
 >
-> premapM (f . g) = premap g . premap f
+> premapM (f <=< g) = premap g . premap f
 
 > premapM k (pure r) = pure r
 >
 > premapM k (f <*> x) = premapM k f <*> premapM k x
 -}
-premapM :: (a -> b) -> FoldM m b r -> FoldM m a r
+premapM :: Monad m => (a -> m b) -> FoldM m b r -> FoldM m a r
 premapM f (FoldM step begin done) = FoldM step' begin done
   where
-    step' x a = step x (f a)
+    step' x a = f a >>= step x
 {-# INLINABLE premapM #-}
 
 {-| @(prefilter f folder)@ returns a new 'Fold' where the folder's input is used
