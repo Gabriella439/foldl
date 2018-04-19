@@ -1,6 +1,6 @@
-Unreleased
+1.4.0
 
-* Change type of `premapM` to accept a monadic function
+* BREAKING CHANGE: Change type of `premapM` to accept a monadic function
 
 1.3.7
 

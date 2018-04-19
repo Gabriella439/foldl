@@ -1,4 +1,4 @@
-# `foldl` v1.3.7
+# `foldl` v1.4.0
 
 Use this `foldl` library when you want to compute multiple folds over a
 collection in one pass over the data without space leaks.
