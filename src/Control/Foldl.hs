@@ -132,6 +132,7 @@ module Control.Foldl (
     , folded
     , filtered
     , groupBy
+    , either
 
     -- * Re-exports
     -- $reexports
@@ -175,6 +176,7 @@ import Prelude hiding
     , notElem
     , lookup
     , map
+    , either
     )
 
 import qualified Data.Foldable               as F
@@ -1329,6 +1331,22 @@ groupBy grouper (Fold f i e) = Fold f' mempty (fmap e)
   where
     f' !m !a = alter (\o -> Just (f (fromMaybe i o) a)) (grouper a) m
 {-# INLINABLE groupBy #-}
+
+{-| Combine two folds into a fold over inputs for either of them.
+-}
+either :: Fold a1 b1 -> Fold a2 b2 -> Fold (Either a1 a2) (b1, b2)
+either (Fold step1 begin1 done1) (Fold step2 begin2 done2) =
+  Fold step begin done
+  where
+    step (Pair x1 x2) a =
+      case a of
+        Left a1 -> Pair (step1 x1 a1) x2
+        Right a2 -> Pair x1 (step2 x2 a2)
+    begin =
+      Pair begin1 begin2
+    done (Pair x1 x2) =
+      (done1 x1, done2 x2)
+{-# INLINABLE either #-}
 
 {- $reexports
     @Control.Monad.Primitive@ re-exports the 'PrimMonad' type class
