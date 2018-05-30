@@ -133,6 +133,7 @@ module Control.Foldl (
     , filtered
     , groupBy
     , either
+    , eitherM
 
     -- * Re-exports
     -- $reexports
@@ -1347,6 +1348,22 @@ either (Fold step1 begin1 done1) (Fold step2 begin2 done2) =
     done (Pair x1 x2) =
       (done1 x1, done2 x2)
 {-# INLINABLE either #-}
+
+{-| Combine two monadic folds into a fold over inputs for either of them.
+-}
+eitherM :: Applicative m => FoldM m a1 b1 -> FoldM m a2 b2 -> FoldM m (Either a1 a2) (b1, b2)
+eitherM (FoldM step1 begin1 done1) (FoldM step2 begin2 done2) =
+  FoldM step begin done
+  where
+    step (Pair x1 x2) a =
+      case a of
+        Left a1 -> Pair <$> (step1 x1 a1) <*> pure x2
+        Right a2 -> Pair x1 <$> (step2 x2 a2)
+    begin =
+      Pair <$> begin1 <*> begin2
+    done (Pair x1 x2) =
+      (,) <$> done1 x1 <*> done2 x2
+{-# INLINABLE eitherM #-}
 
 {- $reexports
     @Control.Monad.Primitive@ re-exports the 'PrimMonad' type class
