@@ -45,6 +45,7 @@ Library
         Control.Foldl.ByteString,
         Control.Foldl.Text
     Other-Modules:
+        Control.Foldl.Optics
         Control.Foldl.Internal
     GHC-Options: -O2 -Wall
 

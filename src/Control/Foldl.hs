@@ -142,6 +142,7 @@ module Control.Foldl (
     , module Data.Vector.Generic
     ) where
 
+import Control.Foldl.Optics
 import Control.Applicative
 import Control.Foldl.Internal (Maybe'(..), lazy, Either'(..), hush)
 import Control.Monad ((<=<))
@@ -1336,33 +1337,13 @@ groupBy grouper (Fold f i e) = Fold f' mempty (fmap e)
 {-| Combine two folds into a fold over inputs for either of them.
 -}
 either :: Fold a1 b1 -> Fold a2 b2 -> Fold (Either a1 a2) (b1, b2)
-either (Fold step1 begin1 done1) (Fold step2 begin2 done2) =
-  Fold step begin done
-  where
-    step (Pair x1 x2) a =
-      case a of
-        Left a1 -> Pair (step1 x1 a1) x2
-        Right a2 -> Pair x1 (step2 x2 a2)
-    begin =
-      Pair begin1 begin2
-    done (Pair x1 x2) =
-      (done1 x1, done2 x2)
+either l r = (,) <$> handles _Left l <*> handles _Right r
 {-# INLINABLE either #-}
 
 {-| Combine two monadic folds into a fold over inputs for either of them.
 -}
-eitherM :: Applicative m => FoldM m a1 b1 -> FoldM m a2 b2 -> FoldM m (Either a1 a2) (b1, b2)
-eitherM (FoldM step1 begin1 done1) (FoldM step2 begin2 done2) =
-  FoldM step begin done
-  where
-    step (Pair x1 x2) a =
-      case a of
-        Left a1 -> Pair <$> (step1 x1 a1) <*> pure x2
-        Right a2 -> Pair x1 <$> (step2 x2 a2)
-    begin =
-      Pair <$> begin1 <*> begin2
-    done (Pair x1 x2) =
-      (,) <$> done1 x1 <*> done2 x2
+eitherM :: Monad m => FoldM m a1 b1 -> FoldM m a2 b2 -> FoldM m (Either a1 a2) (b1, b2)
+eitherM l r = (,) <$> handlesM _Left l <*> handlesM _Right r
 {-# INLINABLE eitherM #-}
 
 {- $reexports
