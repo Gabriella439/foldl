@@ -137,7 +137,7 @@ module Control.Foldl (
     ) where
 
 import Control.Applicative
-import Control.Foldl.Internal (Maybe'(..), lazy, Either'(..), hush)
+import Control.Foldl.Internal (Maybe'(..), lazy, Either'(..), Pair(..), hush)
 import Control.Monad ((<=<))
 import Control.Monad.Primitive (PrimMonad, RealWorld)
 import Control.Comonad
@@ -198,8 +198,6 @@ import qualified VectorBuilder.Vector
 data Fold a b
   -- | @Fold @ @ step @ @ initial @ @ extract@
   = forall x. Fold (x -> a -> x) x (x -> b)
-
-data Pair a b = Pair !a !b
 
 instance Functor (Fold a) where
     fmap f (Fold step begin done) = Fold step begin (f . done)

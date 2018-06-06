@@ -9,6 +9,9 @@ module Control.Foldl.Internal (
     -- * Strict Either
     , Either'(..)
     , hush
+
+    -- * Strict Pair
+    , Pair(..)
     ) where
 
 -- | A strict 'Maybe'
@@ -34,3 +37,5 @@ hush :: Either' a b -> Maybe b
 hush (Left'  _) = Nothing
 hush (Right' b) = Just b
 {-# INLINABLE hush #-}
+
+data Pair a b = Pair !a !b
