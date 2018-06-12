@@ -7,7 +7,7 @@ License-File: LICENSE
 Copyright: 2013 Gabriel Gonzalez
 Author: Gabriel Gonzalez
 Maintainer: Gabriel439@gmail.com
-Tested-With: GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.2, GHC == 8.0.1
+Tested-With: GHC == 7.10.2, GHC == 8.0.1
 Bug-Reports: https://github.com/Gabriel439/Haskell-Foldl-Library/issues
 Synopsis: Composable, streaming, and efficient left folds
 Description: This library provides strict left folds that stream in constant
