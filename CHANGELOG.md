@@ -1,3 +1,8 @@
+1.4.1
+
+* Add `Control.Scanl`
+* Drop support for GHC 7.8 and older
+
 1.4.0
 
 * BREAKING CHANGE: Change type of `premapM` to accept a monadic function
