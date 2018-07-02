@@ -238,13 +238,14 @@ instance Semigroup b => Semigroup (Fold a b) where
 instance Semigroupoid Fold where
     o (Fold step1 begin1 done1) (Fold step2 begin2 done2) = Fold
         step
-        (begin1, begin2)
-        (done1 . fst)
+        (Pair begin1 begin2)
+        (\(Pair x _) -> done1 x)
       where
-        step c a =
-            let c2' = step2 (snd c) a
-                c1' = step1 (fst c) (done2 c2')
-            in  (c1', c2')
+        step (Pair c1 c2) a =
+            let c2' = step2 c2 a
+                c1' = step1 c1 (done2 c2')
+            in  Pair c1' c2'
+    {-# INLINE o #-}
 
 instance Monoid b => Monoid (Fold a b) where
     mempty = pure mempty
