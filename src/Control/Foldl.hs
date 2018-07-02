@@ -148,6 +148,7 @@ import Data.Map.Strict (Map, alter)
 import Data.Maybe (fromMaybe)
 import Data.Monoid hiding ((<>))
 import Data.Semigroup (Semigroup(..))
+import Data.Semigroupoid (Semigroupoid)
 import Data.Profunctor
 import Data.Sequence ((|>))
 import Data.Vector.Generic (Vector, Mutable)
@@ -185,6 +186,7 @@ import qualified Data.Vector.Generic         as V
 import qualified Data.Vector.Generic.Mutable as M
 import qualified VectorBuilder.Builder
 import qualified VectorBuilder.Vector
+import qualified Data.Semigroupoid
 
 {-| Efficient representation of a left fold that preserves the fold's step
     function, initial accumulator, and extraction function
@@ -232,6 +234,18 @@ instance Applicative (Fold a) where
 instance Semigroup b => Semigroup (Fold a b) where
     (<>) = liftA2 (<>)
     {-# INLINE (<>) #-}
+
+instance Semigroupoid Fold where
+    o (Fold step1 begin1 done1) (Fold step2 begin2 done2) = Fold
+        step
+        (Pair begin1 begin2)
+        (\(Pair x _) -> done1 x)
+      where
+        step (Pair c1 c2) a =
+            let c2' = step2 c2 a
+                c1' = step1 c1 (done2 c2')
+            in  Pair c1' c2'
+    {-# INLINE o #-}
 
 instance Monoid b => Monoid (Fold a b) where
     mempty = pure mempty
