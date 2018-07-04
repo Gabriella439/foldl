@@ -36,7 +36,7 @@ Library
         hashable                    < 1.3 ,
         contravariant               < 1.6 ,
         semigroups   >= 0.17     && < 1.19,
-        profunctors                 < 5.3 ,
+        profunctors                 < 5.4 ,
         semigroupoids >= 1.0     && < 5.4 ,
         comonad      >= 4.0      && < 6   ,
         vector-builder              < 0.4
