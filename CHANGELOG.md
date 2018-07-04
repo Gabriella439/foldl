@@ -1,3 +1,8 @@
+1.4.2
+
+* Add `Semigroupoid` instance for `Fold`
+* Increase upper bound on `contravariant` and `profunctors`
+
 1.4.1
 
 * Add `Control.Scanl`
