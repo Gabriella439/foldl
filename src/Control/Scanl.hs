@@ -58,6 +58,10 @@ import Data.Traversable
 import Data.Tuple (swap)
 import Prelude hiding ((.), id, scanr)
 
+#if MIN_VERSION_base(4, 7, 0)
+import Data.Coerce
+#endif
+
 --import qualified Control.Foldl as L
 
 {-| Efficient representation of a left map-with-accumulator that preserves the
@@ -370,7 +374,7 @@ scan (Scan step begin) as = fst $ runState (traverse step as) begin
 -- | Like 'scan' but start scanning from the right
 scanr :: Traversable t => Scan a b -> t a -> t b
 scanr (Scan step begin) as =
-  fst (runReverseState (traverse (ReverseState . runState . step) as) begin)
+  fst (runReverseState (traverse (ReverseState #. runState . step) as) begin)
 {-# INLINE scanr #-}
 
 -- | Like 'scan' but monadic
@@ -513,7 +517,7 @@ instance Functor (ReverseState s) where
   {-# INLINE fmap #-}
 
 instance Applicative (ReverseState s) where
-  pure x = ReverseState $ (,) x
+  pure = ReverseState #. (,)
   {-# INLINE pure #-}
 
   mf <*> mx =
@@ -532,3 +536,16 @@ instance Applicative (ReverseState s) where
       in (f x y, s2)
   {-# INLINE liftA2 #-}
 #endif
+
+
+#if MIN_VERSION_base(4, 7, 0)
+-- | This is same as normal function composition, except slightly more efficient. The same trick is used in base <http://hackage.haskell.org/package/base-4.11.1.0/docs/src/Data.Functor.Utils.html#%23.> and lens <http://hackage.haskell.org/package/lens-4.17/docs/Control-Lens-Internal-Coerce.html#v:-35-..>
+(#.) :: Coercible b c => (b -> c) -> (a -> b) -> (a -> c)
+(#.) _ = coerce
+#else
+(#.) :: (b -> c) -> (a -> b) -> (a -> c)
+(#.) = (.)
+#endif
+
+infixr 9 #.
+{-# INLINE (#.) #-}
