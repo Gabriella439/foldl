@@ -5,10 +5,11 @@
 
 >>> import qualified Control.Scanl as SL
 
-    Use 'scan' to apply a 'Fold' to a list:
+    Use 'scan' to apply a 'Fold' to a list (or other 'Traversable' structures) from left to right,
+    and 'scanr' to do so from right to left.
 -}
 
-{-# LANGUAGE BangPatterns              #-}
+{-# LANGUAGE CPP                       #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE RankNTypes                #-}
@@ -22,6 +23,7 @@ module Control.Scanl (
     -- * Scanning
     , scan
     , scanM
+    , scanr
 
     , prescan
     , postscan
@@ -54,7 +56,11 @@ import Data.Profunctor
 import Data.Semigroup (Semigroup(..))
 import Data.Traversable
 import Data.Tuple (swap)
-import Prelude hiding ((.), id)
+import Prelude hiding ((.), id, scanr)
+
+#if MIN_VERSION_base(4, 7, 0)
+import Data.Coerce
+#endif
 
 --import qualified Control.Foldl as L
 
@@ -365,6 +371,12 @@ scan :: Traversable t => Scan a b -> t a -> t b
 scan (Scan step begin) as = fst $ runState (traverse step as) begin
 {-# INLINE scan #-}
 
+-- | Like 'scan' but start scanning from the right
+scanr :: Traversable t => Scan a b -> t a -> t b
+scanr (Scan step begin) as =
+  fst (runReverseState (traverse (ReverseState #. runState . step) as) begin)
+{-# INLINE scanr #-}
+
 -- | Like 'scan' but monadic
 scanM :: (Traversable t, Monad m) => ScanM m a b -> t a -> m (t b)
 scanM (ScanM step begin) as = fmap fst $ runStateT (traverse step as) =<< begin
@@ -490,3 +502,50 @@ premap f (Scan step begin) = Scan (step . f) begin
 premapM :: Monad m => (a -> m b) -> ScanM m b r -> ScanM m a r
 premapM f (ScanM step begin) = ScanM (step <=< lift . f) begin
 {-# INLINABLE premapM #-}
+
+
+-- Internal helpers (not exported)
+newtype ReverseState s a = ReverseState
+  { runReverseState :: s -> (a, s)
+  }
+
+instance Functor (ReverseState s) where
+  fmap f (ReverseState m) =
+    ReverseState $ \s ->
+      let (v, s') = m s
+      in (f v, s')
+  {-# INLINE fmap #-}
+
+instance Applicative (ReverseState s) where
+  pure = ReverseState #. (,)
+  {-# INLINE pure #-}
+
+  mf <*> mx =
+    ReverseState $ \s ->
+      let (f, s2) = runReverseState mf s1
+          (x, s1) = runReverseState mx s
+      in (f x, s2)
+  {-# INLINE (<*>) #-}
+
+#if MIN_VERSION_base(4, 10, 0)
+  -- 'liftA2' was moved to the 'Applicative' class in base 4.10.0.0
+  liftA2 f mx my =
+    ReverseState $ \s ->
+      let (x, s2) = runReverseState mx s1
+          (y, s1) = runReverseState my s
+      in (f x y, s2)
+  {-# INLINE liftA2 #-}
+#endif
+
+
+#if MIN_VERSION_base(4, 7, 0)
+-- | This is same as normal function composition, except slightly more efficient. The same trick is used in base <http://hackage.haskell.org/package/base-4.11.1.0/docs/src/Data.Functor.Utils.html#%23.> and lens <http://hackage.haskell.org/package/lens-4.17/docs/Control-Lens-Internal-Coerce.html#v:-35-..>
+(#.) :: Coercible b c => (b -> c) -> (a -> b) -> (a -> c)
+(#.) _ = coerce
+#else
+(#.) :: (b -> c) -> (a -> b) -> (a -> c)
+(#.) = (.)
+#endif
+
+infixr 9 #.
+{-# INLINE (#.) #-}
