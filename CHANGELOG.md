@@ -1,3 +1,8 @@
+1.4.3
+
+* Add `Control.Scanl.scanr`
+* Increase upper bound on `mwc-random`
+
 1.4.2
 
 * Add `Semigroupoid` instance for `Fold`
