@@ -626,7 +626,7 @@ mean :: Fractional a => Fold a a
 mean = Fold step begin done
   where
     begin = Pair 0 0
-    step (Pair x n) y = Pair ((x * n + y) / (n + 1)) (n + 1)
+    step (Pair x n) y = let n' = n+1 in Pair (x + (y - x) /n') n'
     done (Pair x _) = x
 {-# INLINABLE mean #-}
 
