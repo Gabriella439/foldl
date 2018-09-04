@@ -1,3 +1,8 @@
+1.4.4
+
+* Increase lower bound on `base`
+* Change `mean` to be more numerically stable
+
 1.4.3
 
 * Add `Control.Scanl.scanr`
