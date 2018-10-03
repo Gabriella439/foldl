@@ -128,6 +128,8 @@ module Control.Foldl (
     , folded
     , filtered
     , groupBy
+    , either
+    , eitherM
 
     -- * Re-exports
     -- $reexports
@@ -136,6 +138,7 @@ module Control.Foldl (
     , module Data.Vector.Generic
     ) where
 
+import Control.Foldl.Optics (_Left, _Right)
 import Control.Applicative
 import Control.Foldl.Internal (Maybe'(..), lazy, Either'(..), Pair(..), hush)
 import Control.Monad ((<=<))
@@ -173,6 +176,7 @@ import Prelude hiding
     , notElem
     , lookup
     , map
+    , either
     )
 
 import qualified Data.Foldable               as F
@@ -1323,6 +1327,18 @@ groupBy grouper (Fold f i e) = Fold f' mempty (fmap e)
   where
     f' !m !a = alter (\o -> Just (f (fromMaybe i o) a)) (grouper a) m
 {-# INLINABLE groupBy #-}
+
+{-| Combine two folds into a fold over inputs for either of them.
+-}
+either :: Fold a1 b1 -> Fold a2 b2 -> Fold (Either a1 a2) (b1, b2)
+either l r = (,) <$> handles _Left l <*> handles _Right r
+{-# INLINABLE either #-}
+
+{-| Combine two monadic folds into a fold over inputs for either of them.
+-}
+eitherM :: Monad m => FoldM m a1 b1 -> FoldM m a2 b2 -> FoldM m (Either a1 a2) (b1, b2)
+eitherM l r = (,) <$> handlesM _Left l <*> handlesM _Right r
+{-# INLINABLE eitherM #-}
 
 {- $reexports
     @Control.Monad.Primitive@ re-exports the 'PrimMonad' type class

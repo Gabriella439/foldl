@@ -46,6 +46,7 @@ Library
         Control.Foldl.Text,
         Control.Scanl
     Other-Modules:
+        Control.Foldl.Optics
         Control.Foldl.Internal
     GHC-Options: -O2 -Wall
 
