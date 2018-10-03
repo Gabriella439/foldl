@@ -142,7 +142,7 @@ module Control.Foldl (
     , module Data.Vector.Generic
     ) where
 
-import Control.Foldl.Optics
+import Control.Foldl.Optics (_Left, _Right)
 import Control.Applicative
 import Control.Foldl.Internal (Maybe'(..), lazy, Either'(..), hush)
 import Control.Monad ((<=<))
