@@ -1,3 +1,8 @@
+1.4.5
+
+* Increase upper bound on `containers`
+* Add `either`/`eitherM`
+
 1.4.4
 
 * Increase lower bound on `base`
