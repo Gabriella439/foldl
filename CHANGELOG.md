@@ -1,3 +1,23 @@
+1.4.4
+
+* Increase lower bound on `base`
+* Change `mean` to be more numerically stable
+
+1.4.3
+
+* Add `Control.Scanl.scanr`
+* Increase upper bound on `mwc-random`
+
+1.4.2
+
+* Add `Semigroupoid` instance for `Fold`
+* Increase upper bound on `contravariant` and `profunctors`
+
+1.4.1
+
+* Add `Control.Scanl`
+* Drop support for GHC 7.8 and older
+
 1.4.0
 
 * BREAKING CHANGE: Change type of `premapM` to accept a monadic function

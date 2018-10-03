@@ -36,7 +36,6 @@
 -}
 
 {-# LANGUAGE BangPatterns              #-}
-{-# LANGUAGE CPP                       #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE RankNTypes                #-}
@@ -51,11 +50,8 @@ module Control.Foldl (
     , fold
     , foldM
     , scan
-#if MIN_VERSION_base(4,8,0)
     , prescan
     , postscan
-#else
-#endif
 
     -- * Folds
     , Control.Foldl.mconcat
@@ -144,7 +140,7 @@ module Control.Foldl (
 
 import Control.Foldl.Optics (_Left, _Right)
 import Control.Applicative
-import Control.Foldl.Internal (Maybe'(..), lazy, Either'(..), hush)
+import Control.Foldl.Internal (Maybe'(..), lazy, Either'(..), Pair(..), hush)
 import Control.Monad ((<=<))
 import Control.Monad.Primitive (PrimMonad, RealWorld)
 import Control.Comonad
@@ -155,11 +151,13 @@ import Data.Map.Strict (Map, alter)
 import Data.Maybe (fromMaybe)
 import Data.Monoid hiding ((<>))
 import Data.Semigroup (Semigroup(..))
+import Data.Semigroupoid (Semigroupoid)
 import Data.Profunctor
 import Data.Sequence ((|>))
 import Data.Vector.Generic (Vector, Mutable)
 import Data.Vector.Generic.Mutable (MVector)
 import Data.Hashable (Hashable)
+import Data.Traversable
 import System.Random.MWC (GenIO, createSystemRandom, uniformR)
 import Prelude hiding
     ( head
@@ -192,6 +190,7 @@ import qualified Data.Vector.Generic         as V
 import qualified Data.Vector.Generic.Mutable as M
 import qualified VectorBuilder.Builder
 import qualified VectorBuilder.Vector
+import qualified Data.Semigroupoid
 
 {-| Efficient representation of a left fold that preserves the fold's step
     function, initial accumulator, and extraction function
@@ -205,8 +204,6 @@ import qualified VectorBuilder.Vector
 data Fold a b
   -- | @Fold @ @ step @ @ initial @ @ extract@
   = forall x. Fold (x -> a -> x) x (x -> b)
-
-data Pair a b = Pair !a !b
 
 instance Functor (Fold a) where
     fmap f (Fold step begin done) = Fold step begin (f . done)
@@ -238,15 +235,27 @@ instance Applicative (Fold a) where
         in  Fold step begin done
     {-# INLINE (<*>) #-}
 
-instance Monoid b => Semigroup (Fold a b) where
-    (<>) = liftA2 mappend
+instance Semigroup b => Semigroup (Fold a b) where
+    (<>) = liftA2 (<>)
     {-# INLINE (<>) #-}
+
+instance Semigroupoid Fold where
+    o (Fold step1 begin1 done1) (Fold step2 begin2 done2) = Fold
+        step
+        (Pair begin1 begin2)
+        (\(Pair x _) -> done1 x)
+      where
+        step (Pair c1 c2) a =
+            let c2' = step2 c2 a
+                c1' = step1 c1 (done2 c2')
+            in  Pair c1' c2'
+    {-# INLINE o #-}
 
 instance Monoid b => Monoid (Fold a b) where
     mempty = pure mempty
     {-# INLINE mempty #-}
 
-    mappend = (<>)
+    mappend = liftA2 mappend
     {-# INLINE mappend #-}
 
 instance Num b => Num (Fold a b) where
@@ -345,42 +354,31 @@ data FoldM m a b =
   -- | @FoldM @ @ step @ @ initial @ @ extract@
   forall x . FoldM (x -> a -> m x) (m x) (x -> m b)
 
-instance Monad m => Functor (FoldM m a) where
+instance Functor m => Functor (FoldM m a) where
     fmap f (FoldM step start done) = FoldM step start done'
       where
-        done' x = do
-            b <- done x
-            return $! f b
+        done' x = fmap f $! done x
     {-# INLINE fmap #-}
 
-instance Monad m => Applicative (FoldM m a) where
-    pure b = FoldM (\() _ -> return ()) (return ()) (\() -> return b)
+instance Applicative m => Applicative (FoldM m a) where
+    pure b = FoldM (\() _ -> pure ()) (pure ()) (\() -> pure b)
     {-# INLINE pure #-}
 
     (FoldM stepL beginL doneL) <*> (FoldM stepR beginR doneR) =
-        let step (Pair xL xR) a = do
-                xL' <- stepL xL a
-                xR' <- stepR xR a
-                return $! Pair xL' xR'
-            begin = do
-                xL <- beginL
-                xR <- beginR
-                return $! Pair xL xR
-            done (Pair xL xR) = do
-                f <- doneL xL
-                x <- doneR xR
-                return $! f x
+        let step (Pair xL xR) a = Pair <$> stepL xL a <*> stepR xR a
+            begin = Pair <$> beginL <*> beginR
+            done (Pair xL xR) = doneL xL <*> doneR xR
         in  FoldM step begin done
     {-# INLINE (<*>) #-}
 
-instance Monad m => Profunctor (FoldM m) where
+instance Functor m => Profunctor (FoldM m) where
     rmap = fmap
     lmap f (FoldM step begin done) = FoldM step' begin done
       where
         step' x a = step x (f a)
 
-instance (Monoid b, Monad m) => Semigroup (FoldM m a b) where
-    (<>) = liftA2 mappend
+instance (Semigroup b, Monad m) => Semigroup (FoldM m a b) where
+    (<>) = liftA2 (<>)
     {-# INLINE (<>) #-}
 
 instance (Monoid b, Monad m) => Monoid (FoldM m a b) where
@@ -503,7 +501,6 @@ scan (Fold step begin done) as = foldr cons nil as begin
     cons a k x = done x:(k $! step x a)
 {-# INLINE scan #-}
 
-#if MIN_VERSION_base(4,8,0)
 {-| Convert a `Fold` into a prescan for any `Traversable` type
 
     \"Prescan\" means that the last element of the scan is not included
@@ -515,7 +512,7 @@ prescan (Fold step begin done) as = bs
       where
         x' = step x a
         b  = done x
-    (_, bs) = List.mapAccumL step' begin as
+    (_, bs) = mapAccumL step' begin as
 {-# INLINE prescan #-}
 
 {-| Convert a `Fold` into a postscan for any `Traversable` type
@@ -529,10 +526,8 @@ postscan (Fold step begin done) as = bs
       where
         x' = step x a
         b  = done x'
-    (_, bs) = List.mapAccumL step' begin as
+    (_, bs) = mapAccumL step' begin as
 {-# INLINE postscan #-}
-#else
-#endif
 
 -- | Fold all values within a container using 'mappend' and 'mempty'
 mconcat :: Monoid a => Fold a a
@@ -635,7 +630,7 @@ mean :: Fractional a => Fold a a
 mean = Fold step begin done
   where
     begin = Pair 0 0
-    step (Pair x n) y = Pair ((x * n + y) / (n + 1)) (n + 1)
+    step (Pair x n) y = let n' = n+1 in Pair (x + (y - x) /n') n'
     done (Pair x _) = x
 {-# INLINABLE mean #-}
 
@@ -1064,7 +1059,6 @@ simplify (FoldM step begin done) = Fold step' begin' done'
     begin'    = runIdentity  begin
     done' x   = runIdentity (done x)
 {-# INLINABLE simplify #-}
-
 
 {- | Shift a 'FoldM' from one monad to another with a morphism such as 'lift' or 'liftIO';
      the effect is the same as 'Control.Monad.Morph.hoist'.

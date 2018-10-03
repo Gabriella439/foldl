@@ -1,18 +1,29 @@
-{ mkDerivation, base, bytestring, comonad, containers
-, contravariant, criterion, hashable, mwc-random, primitive
-, profunctors, semigroups, stdenv, text, transformers
-, unordered-containers, vector, vector-builder
-}:
-mkDerivation {
-  pname = "foldl";
-  version = "1.4.0";
-  src = ./.;
-  libraryHaskellDepends = [
-    base bytestring comonad containers contravariant hashable
-    mwc-random primitive profunctors semigroups text transformers
-    unordered-containers vector vector-builder
-  ];
-  benchmarkHaskellDepends = [ base criterion ];
-  description = "Composable, streaming, and efficient left folds";
-  license = stdenv.lib.licenses.bsd3;
-}
+let
+  fetchNixpkgs = import ./nix/fetchNixpkgs.nix;
+
+  nixpkgs = fetchNixpkgs {
+    rev = "804060ff9a79ceb0925fe9ef79ddbf564a225d47";
+
+    sha256 = "01pb6p07xawi60kshsxxq1bzn8a0y4s5jjqvhkwps4f5xjmmwav3";
+
+    outputSha256 = "0ga345hgw6v2kzyhvf5kw96hf60mx5pbd9c4qj5q4nan4lr7nkxn";
+  };
+
+  readDirectory = import ./nix/readDirectory.nix;
+
+  config = {
+    packageOverrides = pkgs: {
+      haskellPackages = pkgs.haskellPackages.override {
+        overrides = readDirectory ./nix;
+      };
+    };
+  };
+
+  pkgs =
+    import nixpkgs { inherit config; };
+
+in
+  { inherit (pkgs.haskellPackages) foldl;
+
+    shell = (pkgs.haskell.lib.doBenchmark pkgs.haskellPackages.foldl).env;
+  }

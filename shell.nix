@@ -1,1 +1,1 @@
-(import ./release.nix).foldl.env
+(import ./default.nix).shell
