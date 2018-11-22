@@ -1,12 +1,32 @@
-{-| This module provides efficient and streaming left map-with-accumulator that you can combine
-    using 'Applicative' style.
+{-| This module provides efficient and streaming left map-with-accumulator that
+    you can combine using 'Applicative' style.
 
     Import this module qualified to avoid clashing with the Prelude:
 
 >>> import qualified Control.Scanl as SL
 
-    Use 'scan' to apply a 'Fold' to a list (or other 'Traversable' structures) from left to right,
-    and 'scanr' to do so from right to left.
+    Use 'scan' to apply a 'Fold' to a list (or other 'Traversable' structures)
+    from left to right, and 'scanr' to do so from right to left.
+
+    Note that the `Scan` type does not supersede the `Fold` type nor does the
+    `Fold` type supersede the `Scan` type.  Each type has a unique advantage.
+
+    For example, `Scan`s can be chained end-to-end:
+
+    > (>>>) :: Scan a b -> Scan b c -> Scan a c
+
+    In other words, `Scan` is an instance of the `Category` typeclass.
+
+    `Fold`s cannot be chained end-to-end
+
+    Vice versa, `Fold`s can produce a result even when fed no input:
+
+    > extract :: Fold a b -> b
+
+    In other words, `Fold` is an instance of the `Comonad` typeclass.
+
+    A `Scan`s cannot produce any output until provided with at least one
+    input.
 -}
 
 {-# LANGUAGE CPP                       #-}
