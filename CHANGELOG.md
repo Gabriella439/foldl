@@ -1,3 +1,8 @@
+Unreleased
+
+* Add `exHalt`, `exHalt_`, `exSkip`, `exSkip_`
+* Add dependency on `safe-exceptions`
+
 1.4.5
 
 * Increase upper bound on `containers`
