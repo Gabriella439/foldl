@@ -493,7 +493,11 @@ foldM (FoldM step begin done) as0 = do
         k $! x'
 {-# INLINE foldM #-}
 
--- | Convert a strict left 'Fold' into a scan
+{-| Convert a strict left 'Fold' into a scan
+
+    >>> L.scan L.length [1..5]
+    [0,1,2,3,4,5]
+-}
 scan :: Fold a b -> [a] -> [b]
 scan (Fold step begin done) as = foldr cons nil as begin
   where
@@ -504,6 +508,9 @@ scan (Fold step begin done) as = foldr cons nil as begin
 {-| Convert a `Fold` into a prescan for any `Traversable` type
 
     \"Prescan\" means that the last element of the scan is not included
+
+    >>> L.prescan L.length [1..5]
+    [0,1,2,3,4]
 -}
 prescan :: Traversable t => Fold a b -> t a -> t b
 prescan (Fold step begin done) as = bs
@@ -518,6 +525,9 @@ prescan (Fold step begin done) as = bs
 {-| Convert a `Fold` into a postscan for any `Traversable` type
 
     \"Postscan\" means that the first element of the scan is not included
+
+    >>> L.postscan L.length [1..5]
+    [1,2,3,4,5]
 -}
 postscan :: Traversable t => Fold a b -> t a -> t b
 postscan (Fold step begin done) as = bs
