@@ -118,6 +118,8 @@ module Control.Foldl (
     , premapM
     , prefilter
     , prefilterM
+    , premapMaybe
+    , premapMaybeM
     , Handler
     , handles
     , foldOver
@@ -1161,7 +1163,7 @@ prefilter f (Fold step begin done) = Fold step' begin done
     step' x a = if f a then step x a else x
 {-# INLINABLE prefilter #-}
 
-{-| @(prefilterM f folder)@ returns a new 'Fold' where the folder's input is used
+{-| @(prefilterM f folder)@ returns a new 'FoldM' where the folder's input is used
   only when the input satisfies a monadic predicate f.
 
 > foldM (prefilterM p folder) list = foldM folder (filter p list)
@@ -1173,6 +1175,30 @@ prefilterM f (FoldM step begin done) = FoldM step' begin done
       use <- f a
       if use then step x a else return x
 {-# INLINABLE prefilterM #-}
+
+{-| @(premapMaybe f folder)@ returns a new 'Fold' where the folder's input is
+transformed and used only when `f input` returns `Just b`
+-}
+premapMaybe :: (a -> Maybe b) -> Fold b r -> Fold a r
+premapMaybe f (Fold step begin done) = Fold step' begin done
+  where
+    step' x a = case f a of
+      Just b -> step x b
+      Nothing -> x
+{-# INLINABLE premapMaybe #-}
+
+{-| @(premapMaybeM f folder)@ returns a new 'FoldM' where the folder's input is
+transformed and used only when `f input` returns `Just b`
+-}
+premapMaybeM :: (Monad m) => (a -> m (Maybe b)) -> FoldM m b r -> FoldM m a r
+premapMaybeM f (FoldM step begin done) = FoldM step' begin done
+  where
+    step' x a = do
+      res <- f a
+      case res of
+        Just b -> step x b
+        Nothing -> return x
+{-# INLINABLE premapMaybeM #-}
 
 {-| A handler for the upstream input of a `Fold`
 
