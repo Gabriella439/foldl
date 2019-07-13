@@ -1161,7 +1161,7 @@ prefilter f (Fold step begin done) = Fold step' begin done
     step' x a = if f a then step x a else x
 {-# INLINABLE prefilter #-}
 
-{-| @(prefilterM f folder)@ returns a new 'Fold' where the folder's input is used
+{-| @(prefilterM f folder)@ returns a new 'FoldM' where the folder's input is used
   only when the input satisfies a monadic predicate f.
 
 > foldM (prefilterM p folder) list = foldM folder (filter p list)
