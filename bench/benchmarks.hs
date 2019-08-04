@@ -41,13 +41,13 @@ main = defaultMain
             ]
         , bgroup "sumAndLength" $ map ($ ns)
             [ bench "naive sumAndLength" .
-                whnf sumAndLength
+                nf sumAndLength
             , bench "foldl' sumAndLength" .
-                whnf sumAndLength'
+                nf sumAndLength'
             , bench "strict pair sumAndLength" .
-                whnf sumAndLength_Pair
+                nf sumAndLength_Pair
             , bench "foldl sumAndLength" .
-                whnf sumAndLength_foldl
+                nf sumAndLength_foldl
             ]
         ]
   ]
