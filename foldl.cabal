@@ -58,4 +58,4 @@ Benchmark benchmarks
         base,
         criterion,
         foldl
-    GHC-Options: -O2 -Wall -rtsopts
+    GHC-Options: -O2 -Wall -rtsopts -rtsopts -with-rtsopts=-T
