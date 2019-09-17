@@ -113,6 +113,10 @@ module Control.Foldl (
     , simplify
     , hoists
     , duplicateM
+    , joinOutputsWith
+    , joinWith
+    , joinOutputsWithM
+    , joinWithM
     , _Fold1
     , premap
     , premapM
@@ -1086,6 +1090,56 @@ duplicateM :: Applicative m => FoldM m a b -> FoldM m a (FoldM m a b)
 duplicateM (FoldM step begin done) =
     FoldM step begin (\x -> pure (FoldM step (pure x) done))
 {-# INLINABLE duplicateM #-}
+
+{-| Join the outputs of two 'Fold's by applying a joining function to their
+    respective outputs.
+-}
+joinOutputsWith :: (b -> c -> d) -> Fold a b -> Fold a c -> Fold a d
+joinOutputsWith f (Fold stepL iniL extL) (Fold stepR iniR extR) =
+  let newStep (xL,xR) a  = (,) (stepL xL a) (stepR xR a)
+      newInit            = (,) iniL iniR
+      newExtract (xL,xR) = f (extL xL) (extR xR)
+  in Fold newStep newInit newExtract
+{-# INLINABLE joinOutputsWith #-}
+
+{-| Join two 'Fold's by applying joining functions to their inputs and
+    outputs.
+-}
+joinWith :: (e -> a) -> (e -> c) -> (b -> d -> f) -> Fold a b -> Fold c d -> Fold e f
+joinWith iLF iRF oF (Fold stepL iniL extL) (Fold stepR iniR extR) =
+  let newStep (xL,xR) e  = (,) (stepL xL $ iLF e) (stepR xR $ iRF e)
+      newInit            = (,) iniL iniR
+      newExtract (xL,xR) = oF (extL xL) (extR xR)
+  in Fold newStep newInit newExtract
+{-# INLINABLE joinWith #-}
+
+{-| Join the outputs of two 'FoldM's by applying a joining function to their
+    respective outputs.
+-}
+joinOutputsWithM :: Monad m => (b -> c -> m d) -> FoldM m a b -> FoldM m a c -> FoldM m a d
+joinOutputsWithM f (FoldM stepL iniL extL) (FoldM stepR iniR extR) =
+  let newStep (xL,xR) a  = (,) <$> stepL xL a <*> stepR xR a
+      newInit            = (,) <$> iniL <*> iniR
+      newExtract (xL,xR) = do
+        l <- extL xL
+        r <- extR xR
+        f l r
+  in FoldM newStep newInit newExtract
+{-# INLINABLE joinOutputsWithM #-}
+
+{-| Join two 'FoldM's by applying joining functions to their inputs and
+    outputs.
+-}
+joinWithM :: Monad m => (e -> a) -> (e -> c) -> (b -> d -> m f) -> FoldM m a b -> FoldM m c d -> FoldM m e f
+joinWithM iLF iRF oF (FoldM stepL iniL extL) (FoldM stepR iniR extR) =
+  let newStep (xL,xR) e  = (,) <$> stepL xL (iLF e) <*> stepR xR (iRF e)
+      newInit            = (,) <$> iniL <*> iniR
+      newExtract (xL,xR) = do
+        l <- extL xL
+        r <- extR xR
+        oF l r
+  in FoldM newStep newInit newExtract
+{-# INLINABLE joinWithM #-}
 
 {-| @_Fold1 step@ returns a new 'Fold' using just a step function that has the
 same type for the accumulator and the element. The result type is the

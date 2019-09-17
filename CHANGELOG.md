@@ -1,3 +1,8 @@
+1.4.6
+
+* Added `joinOutputsWith`/`joinOutputsWithM`
+* Added `joinWith`/`joinWithM`
+
 1.4.5
 
 * Increase upper bound on `containers`
