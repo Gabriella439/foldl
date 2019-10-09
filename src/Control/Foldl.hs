@@ -130,6 +130,7 @@ module Control.Foldl (
     , groupBy
     , either
     , eitherM
+    , nest
 
     -- * Re-exports
     -- $reexports
@@ -1349,6 +1350,14 @@ either l r = (,) <$> handles _Left l <*> handles _Right r
 eitherM :: Monad m => FoldM m a1 b1 -> FoldM m a2 b2 -> FoldM m (Either a1 a2) (b1, b2)
 eitherM l r = (,) <$> handlesM _Left l <*> handlesM _Right r
 {-# INLINABLE eitherM #-}
+
+{-| Nest a fold in an applicative.
+-}
+nest :: Applicative f => Fold a b -> Fold (f a) (f b)
+nest (Fold s i e) =
+    Fold (\xs as -> liftA2 s xs as)
+             (pure i)
+                      (\xs -> fmap e xs)
 
 {- $reexports
     @Control.Monad.Primitive@ re-exports the 'PrimMonad' type class
