@@ -1356,8 +1356,8 @@ eitherM l r = (,) <$> handlesM _Left l <*> handlesM _Right r
 nest :: Applicative f => Fold a b -> Fold (f a) (f b)
 nest (Fold s i e) =
     Fold (\xs as -> liftA2 s xs as)
-             (pure i)
-                      (\xs -> fmap e xs)
+         (pure i)
+         (\xs -> fmap e xs)
 
 {- $reexports
     @Control.Monad.Primitive@ re-exports the 'PrimMonad' type class
