@@ -1358,6 +1358,7 @@ nest (Fold s i e) =
     Fold (\xs as -> liftA2 s xs as)
          (pure i)
          (\xs -> fmap e xs)
+{-# INLINABLE nest #-}
 
 {- $reexports
     @Control.Monad.Primitive@ re-exports the 'PrimMonad' type class
