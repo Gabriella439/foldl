@@ -118,6 +118,7 @@ module Control.Foldl (
     , premapM
     , prefilter
     , prefilterM
+    , predropWhile
     , Handler
     , handles
     , foldOver
@@ -1174,6 +1175,24 @@ prefilterM f (FoldM step begin done) = FoldM step' begin done
       use <- f a
       if use then step x a else return x
 {-# INLINABLE prefilterM #-}
+
+{-| Transforms a 'Fold' into one which ignores elements
+    until they stop satisfying a predicate
+
+> fold (predropWhile p folder) list = fold folder (dropWhile p list)
+
+>>> fold (predropWhile (>5) Control.Foldl.sum) [10,9,5,9]
+14
+-}
+predropWhile :: (a -> Bool) -> Fold a r -> Fold a r
+predropWhile f (Fold step begin done) = Fold step' begin' done'
+  where
+    step' (Pair dropping x) a = if dropping && f a
+      then Pair True x
+      else Pair False (step x a)
+    begin' = Pair True begin
+    done' (Pair _ state) = done state
+{-# INLINABLE predropWhile #-}
 
 {-| A handler for the upstream input of a `Fold`
 
