@@ -1,3 +1,7 @@
+1.4.6
+
+* Add `nest`/`predropWhile`/`drop`/`dropM`
+
 1.4.5
 
 * Increase upper bound on `containers`
