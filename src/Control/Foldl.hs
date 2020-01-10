@@ -119,6 +119,8 @@ module Control.Foldl (
     , prefilter
     , prefilterM
     , predropWhile
+    , drop
+    , dropM
     , Handler
     , handles
     , foldOver
@@ -160,6 +162,7 @@ import Data.Vector.Generic (Vector, Mutable)
 import Data.Vector.Generic.Mutable (MVector)
 import Data.Hashable (Hashable)
 import Data.Traversable
+import Numeric.Natural (Natural)
 import System.Random.MWC (GenIO, createSystemRandom, uniformR)
 import Prelude hiding
     ( head
@@ -179,6 +182,7 @@ import Prelude hiding
     , lookup
     , map
     , either
+    , drop
     )
 
 import qualified Data.Foldable               as F
@@ -1209,6 +1213,48 @@ predropWhile f (Fold step begin done) = Fold step' begin' done'
     begin' = Pair True begin
     done' (Pair _ state) = done state
 {-# INLINABLE predropWhile #-}
+
+{-| @(drop n folder)@ returns a new 'Fold' that ignores the first @n@ inputs but
+otherwise behaves the same as the original fold.
+
+> fold (drop n folder) list = fold folder (Data.List.genericDrop n list)
+
+>>> L.fold (L.drop 3 L.sum) [10, 20, 30, 1, 2, 3]
+6
+
+>>> L.fold (L.drop 10 L.sum) [10, 20, 30, 1, 2, 3]
+0
+-}
+
+drop :: Natural -> Fold a b -> Fold a b
+drop n (Fold step begin done) = Fold step' begin' done'
+  where
+    begin'          = (n, begin)
+    step' (0,  s) x = (0, step s x)
+    step' (n', s) _ = (n' - 1, s)
+    done' (_,  s)   = done s
+{-# INLINABLE drop #-}
+
+{-| @(dropM n folder)@ returns a new 'FoldM' that ignores the first @n@ inputs but
+otherwise behaves the same as the original fold.
+
+> foldM (dropM n folder) list = foldM folder (Data.List.genericDrop n list)
+
+>>> L.foldM (L.dropM 3 (L.generalize L.sum)) [10, 20, 30, 1, 2, 3]
+6
+
+>>> L.foldM (L.dropM 10 (L.generalize L.sum)) [10, 20, 30, 1, 2, 3]
+0
+-}
+
+dropM :: Monad m => Natural -> FoldM m a b -> FoldM m a b
+dropM n (FoldM step begin done) = FoldM step' begin' done'
+  where
+    begin'          = fmap (\s  -> (n, s))  begin
+    step' (0,  s) x = fmap (\s' -> (0, s')) (step s x)
+    step' (n', s) _ = return (n' - 1, s)
+    done' (_,  s)   = done s
+{-# INLINABLE dropM #-}
 
 {-| A handler for the upstream input of a `Fold`
 
