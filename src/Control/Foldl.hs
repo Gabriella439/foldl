@@ -198,6 +198,22 @@ import qualified VectorBuilder.Builder
 import qualified VectorBuilder.Vector
 import qualified Data.Semigroupoid
 
+{- $setup
+
+>>> import qualified Control.Foldl as L
+
+>>> _2 f (x, y) = fmap (\i -> (x, i)) (f y)
+
+>>> :{
+>>> _Just = let maybeEither Nothing = Left Nothing
+>>>             maybeEither (Just x) = Right x
+>>>         in Control.Foldl.Optics.prism Just maybeEither
+>>> :}
+
+>>> both f (x, y) = (,) <$> f x <*> f y
+
+-}
+
 {-| Efficient representation of a left fold that preserves the fold's step
     function, initial accumulator, and extraction function
 
@@ -1108,12 +1124,12 @@ _Fold1 step = Fold step_ Nothing' lazy
 
 {-| @(premap f folder)@ returns a new 'Fold' where f is applied at each step
 
-> fold (premap f folder) list = fold folder (map f list)
+> fold (premap f folder) list = fold folder (List.map f list)
 
->>> fold (premap Sum mconcat) [1..10]
+>>> fold (premap Sum L.mconcat) [1..10]
 Sum {getSum = 55}
 
->>> fold mconcat (map Sum [1..10])
+>>> fold L.mconcat (List.map Sum [1..10])
 Sum {getSum = 55}
 
 > premap id = id
@@ -1264,7 +1280,7 @@ type Handler a b =
 >>> fold (handles (filtered even) sum) [1..10]
 30
 
->>> fold (handles _2 mconcat) [(1,"Hello "),(2,"World"),(3,"!")]
+>>> fold (handles _2 L.mconcat) [(1,"Hello "),(2,"World"),(3,"!")]
 "Hello World!"
 
 > handles id = id
@@ -1379,7 +1395,7 @@ folded k ts = contramap (\_ -> ()) (F.traverse_ k ts)
 >>> fold (handles (filtered even) sum) [1..10]
 30
 
->>> foldM (handlesM (filtered even) (mapM_ print)) [1..10]
+>>> foldM (handlesM (filtered even) (L.mapM_ print)) [1..10]
 2
 4
 6
