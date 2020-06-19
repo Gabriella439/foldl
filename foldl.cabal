@@ -1,6 +1,6 @@
 Name: foldl
 Version: 1.4.7
-Cabal-Version: >=1.8.0.2
+Cabal-Version: >=1.10
 Build-Type: Simple
 License: BSD3
 License-File: LICENSE
@@ -49,6 +49,7 @@ Library
         Control.Foldl.Optics
         Control.Foldl.Internal
     GHC-Options: -O2 -Wall
+    Default-Language: Haskell2010
 
 Benchmark benchmarks
     Type: exitcode-stdio-1.0
@@ -59,6 +60,7 @@ Benchmark benchmarks
         criterion,
         foldl
     GHC-Options: -O2 -Wall -rtsopts -rtsopts -with-rtsopts=-T
+    Default-Language: Haskell2010
 
 Test-Suite doctest
     Type: exitcode-stdio-1.0
@@ -68,3 +70,4 @@ Test-Suite doctest
         base,
         doctest >= 0.16
     GHC-Options: -threaded
+    Default-Language: Haskell2010
