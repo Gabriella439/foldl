@@ -5,25 +5,22 @@ let
     sha256 = "1j52yvkhw1inp6ilpqy81xv1bbwgwqjn0v9647whampkqgn6dxhk";
   };
 
-  readDirectory = import ./nix/readDirectory.nix;
+  overlay = pkgsNew: pkgsOld: {
+    haskellPackages = pkgsOld.haskellPackages.override {
+      overrides =
+        let
+          manualOverrides = haskellPackagesNew: haskellPackagesOld: {
+          };
 
-  config = {
-    packageOverrides = pkgs: {
-      haskellPackages = pkgs.haskellPackages.override {
-        overrides =
-          let
-            manualOverrides = haskellPackagesNew: haskellPackagesOld: {
-            };
-
-          in
-            pkgs.lib.composeExtensions (readDirectory ./nix) manualOverrides;
-
-      };
+        in
+          pkgsNew.lib.fold pkgsNew.lib.composeExtensions (_: _: {}) [
+            (pkgsNew.haskell.lib.packagesFromDirectory { directory = ./nix; })
+            manualOverrides
+          ];
     };
   };
 
-  pkgs =
-    import nixpkgs { inherit config; };
+  pkgs = import nixpkgs { config = {}; overlays = [ overlay ]; };
 
 in
   { inherit (pkgs.haskellPackages) foldl;
