@@ -945,7 +945,7 @@ map = Fold step begin done
 {-# INLINABLE map #-}
 
 
-{- | Given a 'Fold', produces a 'Map' which applies that fold to each a separated by key 'k'.
+{- | Given a 'Fold', produces a 'Map' which applies that fold to each @a@ separated by key @k@.
 
 >>> fold (foldByKeyMap Control.Foldl.sum) [("a",1), ("b",2), ("b",20), ("a",10)]
 fromList [("a",11),("b",22)]
@@ -977,7 +977,7 @@ hashMap = Fold step begin done
     done = id
 {-# INLINABLE hashMap #-}
 
-{- | Given a 'Fold', produces a 'HashMap' which applies that fold to each a separated by key 'k'.
+{- | Given a 'Fold', produces a 'HashMap' which applies that fold to each @a@ separated by key @k@.
 
 >>> fold (foldByKeyHashMap Control.Foldl.sum) [("a",1), ("b",2), ("b",20), ("a",10)]
 fromList [("a",11),("b",22)]
