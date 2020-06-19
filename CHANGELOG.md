@@ -1,3 +1,7 @@
+1.4.7
+
+* Add `foldByKey{,Hash}Map` functions
+
 1.4.6
 
 * Add `nest`/`predropWhile`/`drop`/`dropM`
