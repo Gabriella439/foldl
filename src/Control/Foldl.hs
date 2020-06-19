@@ -39,6 +39,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE RankNTypes                #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE Trustworthy               #-}
 
 module Control.Foldl (
@@ -99,7 +100,9 @@ module Control.Foldl (
     , set
     , hashSet
     , map
+    , foldByKeyMap
     , hashMap
+    , foldByKeyHashMap
     , vector
     , vectorM
 
@@ -151,6 +154,7 @@ import Control.Comonad
 import Data.Foldable (Foldable)
 import Data.Functor.Identity (Identity, runIdentity)
 import Data.Functor.Contravariant (Contravariant(..))
+import Data.HashMap.Strict (HashMap)
 import Data.Map.Strict (Map, alter)
 import Data.Maybe (fromMaybe)
 import Data.Monoid hiding ((<>))
@@ -940,6 +944,28 @@ map = Fold step begin done
     done = id
 {-# INLINABLE map #-}
 
+
+{- | Given a 'Fold', produces a 'Map' which applies that fold to each a separated by key 'k'.
+
+>>> fold (foldByKeyMap Control.Foldl.sum) [("a",1), ("b",2), ("b",20), ("a",10)]
+fromList [("a",11),("b",22)]
+-}
+foldByKeyMap :: forall k a b. Ord k => Fold a b -> Fold (k, a) (Map k b)
+foldByKeyMap f = case f of
+  Fold (step0 :: x -> a -> x) (ini0 :: x) (end0 :: x -> b) ->
+    let
+      step :: Map k x -> (k,a) -> Map k x
+      step mp (k,a) = Map.alter addToMap k mp where
+        addToMap Nothing         = Just $ step0 ini0 a
+        addToMap (Just existing) = Just $ step0 existing a
+
+      ini :: Map k x
+      ini = Map.empty
+
+      end :: Map k x -> Map k b
+      end = fmap end0
+    in Fold step ini end where
+
 {-|
 Fold pairs into a hash-map.
 -}
@@ -950,6 +976,27 @@ hashMap = Fold step begin done
     step m (k, v) = HashMap.insert k v m
     done = id
 {-# INLINABLE hashMap #-}
+
+{- | Given a 'Fold', produces a 'HashMap' which applies that fold to each a separated by key 'k'.
+
+>>> fold (foldByKeyHashMap Control.Foldl.sum) [("a",1), ("b",2), ("b",20), ("a",10)]
+fromList [("a",11),("b",22)]
+-}
+foldByKeyHashMap :: forall k a b. (Hashable k, Eq k) => Fold a b -> Fold (k, a) (HashMap k b)
+foldByKeyHashMap f = case f of
+  Fold (step0 :: x -> a -> x) (ini0 :: x) (end0 :: x -> b) ->
+    let
+      step :: HashMap k x -> (k,a) -> HashMap k x
+      step mp (k,a) = HashMap.alter addToHashMap k mp where
+        addToHashMap Nothing         = Just $ step0 ini0 a
+        addToHashMap (Just existing) = Just $ step0 existing a
+
+      ini :: HashMap k x
+      ini = HashMap.empty
+
+      end :: HashMap k x -> HashMap k b
+      end = fmap end0
+    in Fold step ini end where
 
 -- | Fold all values into a vector
 vector :: Vector v a => Fold a (v a)
