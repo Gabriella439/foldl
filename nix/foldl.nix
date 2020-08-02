@@ -1,16 +1,16 @@
 { mkDerivation, base, bytestring, comonad, containers
 , contravariant, criterion, doctest, hashable, mwc-random
-, primitive, profunctors, semigroupoids, semigroups, stdenv, text
-, transformers, unordered-containers, vector, vector-builder
+, primitive, profunctors, semigroupoids, stdenv, text, transformers
+, unordered-containers, vector, vector-builder
 }:
 mkDerivation {
   pname = "foldl";
-  version = "1.4.7";
+  version = "1.4.8";
   src = ./..;
   libraryHaskellDepends = [
     base bytestring comonad containers contravariant hashable
-    mwc-random primitive profunctors semigroupoids semigroups text
-    transformers unordered-containers vector vector-builder
+    mwc-random primitive profunctors semigroupoids text transformers
+    unordered-containers vector vector-builder
   ];
   testHaskellDepends = [ base doctest ];
   benchmarkHaskellDepends = [ base criterion ];

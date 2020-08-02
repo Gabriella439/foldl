@@ -1,3 +1,7 @@
+1.4.8
+
+* Only depend on `semigroups` for older GHC versions
+
 1.4.7
 
 * Add `foldByKey{,Hash}Map` functions
