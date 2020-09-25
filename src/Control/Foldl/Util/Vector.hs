@@ -24,4 +24,4 @@ initialized :: Vector v a => Int -> (forall s. Mutable v s a -> ST s ()) -> v a
 initialized size initialize = runST $ do
   mv <- M.unsafeNew size
   initialize mv
-  freeze mv
+  unsafeFreeze mv
