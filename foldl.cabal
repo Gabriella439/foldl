@@ -37,8 +37,7 @@ Library
         contravariant               < 1.6 ,
         profunctors                 < 5.6 ,
         semigroupoids >= 1.0     && < 5.4 ,
-        comonad      >= 4.0      && < 6   ,
-        vector-builder              < 0.4
+        comonad      >= 4.0      && < 6
     if impl(ghc < 8.0)
         Build-Depends:
             semigroups   >= 0.17 && < 1.20
@@ -50,6 +49,8 @@ Library
     Other-Modules:
         Control.Foldl.Optics
         Control.Foldl.Internal
+        Control.Foldl.Util.Vector
+        Control.Foldl.Util.MVector
     GHC-Options: -O2 -Wall
     Default-Language: Haskell2010
 

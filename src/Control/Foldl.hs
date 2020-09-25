@@ -197,9 +197,8 @@ import qualified Data.Map.Strict             as Map
 import qualified Data.HashMap.Strict         as HashMap
 import qualified Data.HashSet                as HashSet
 import qualified Data.Vector.Generic         as V
+import qualified Control.Foldl.Util.Vector   as V
 import qualified Data.Vector.Generic.Mutable as M
-import qualified VectorBuilder.Builder
-import qualified VectorBuilder.Vector
 import qualified Data.Semigroupoid
 
 {- $setup
@@ -1000,13 +999,7 @@ foldByKeyHashMap f = case f of
 
 -- | Fold all values into a vector
 vector :: Vector v a => Fold a (v a)
-vector = Fold step begin done
-  where
-    begin = VectorBuilder.Builder.empty
-
-    step x a = x <> VectorBuilder.Builder.singleton a
-
-    done = VectorBuilder.Vector.build
+vector = V.fromReverseListN <$> length <*> revList
 {-# INLINABLE vector #-}
 
 maxChunkSize :: Int
