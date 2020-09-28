@@ -1,3 +1,7 @@
+1.4.9
+
+* Implement `vector` utility more efficiently
+
 1.4.8
 
 * Only depend on `semigroups` for older GHC versions
