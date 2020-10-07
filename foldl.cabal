@@ -62,7 +62,7 @@ Benchmark Foldl
         base,
         criterion,
         foldl
-    GHC-Options: -O2 -Wall -rtsopts -rtsopts -with-rtsopts=-T
+    GHC-Options: -O2 -Wall -rtsopts -with-rtsopts=-T
     Default-Language: Haskell2010
 
 Benchmark Scanl

@@ -5,7 +5,7 @@
 
 >>> import qualified Control.Scanl as SL
 
-    Use 'scan' to apply a 'Fold' to a list (or other 'Traversable' structures)
+    Use 'scan' to apply a 'Scan' to a list (or other 'Traversable' structures)
     from left to right, and 'scanr' to do so from right to left.
 
     Note that the `Scan` type does not supersede the `Fold` type nor does the
@@ -25,7 +25,7 @@
 
     In other words, `Fold` is an instance of the `Comonad` typeclass.
 
-    A `Scan`s cannot produce any output until provided with at least one
+    A `Scan` cannot produce any output until provided with at least one
     input.
 -}
 
