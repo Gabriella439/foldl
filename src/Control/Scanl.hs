@@ -5,7 +5,7 @@
 
 >>> import qualified Control.Scanl as SL
 
-    Use 'scan' to apply a 'Fold' to a list (or other 'Traversable' structures)
+    Use 'scan' to apply a 'Scan' to a list (or other 'Traversable' structures)
     from left to right, and 'scanr' to do so from right to left.
 
     Note that the `Scan` type does not supersede the `Fold` type nor does the
@@ -25,7 +25,7 @@
 
     In other words, `Fold` is an instance of the `Comonad` typeclass.
 
-    A `Scan`s cannot produce any output until provided with at least one
+    A `Scan` cannot produce any output until provided with at least one
     input.
 -}
 
@@ -69,6 +69,7 @@ import Control.Foldl (Fold(..))
 import Control.Foldl.Internal (Pair(..))
 import Control.Monad ((<=<))
 import Control.Monad.Trans.Class
+import qualified Control.Monad.Trans.State.Lazy as Lazy
 import Control.Monad.Trans.State.Strict
 import Data.Functor.Identity
 import Data.Monoid hiding ((<>))
@@ -81,6 +82,9 @@ import Prelude hiding ((.), id, scanr)
 #if MIN_VERSION_base(4, 7, 0)
 import Data.Coerce
 #endif
+
+asLazy :: StateT s m a -> Lazy.StateT s m a
+asLazy = Lazy.StateT . runStateT
 
 --import qualified Control.Foldl as L
 
@@ -388,7 +392,9 @@ instance (Monad m, Floating b) => Floating (ScanM m a b) where
 
 -- | Apply a strict left 'Scan' to a 'Traversable' container
 scan :: Traversable t => Scan a b -> t a -> t b
-scan (Scan step begin) as = fst $ runState (traverse step as) begin
+-- To make it possible to consume the generated structure lazily, we must
+-- 'traverse' with lazy 'StateT'.
+scan (Scan step begin) as = fst $ Lazy.runState (traverse (asLazy . step) as) begin
 {-# INLINE scan #-}
 
 -- | Like 'scan' but start scanning from the right
@@ -399,7 +405,9 @@ scanr (Scan step begin) as =
 
 -- | Like 'scan' but monadic
 scanM :: (Traversable t, Monad m) => ScanM m a b -> t a -> m (t b)
-scanM (ScanM step begin) as = fmap fst $ runStateT (traverse step as) =<< begin
+-- To make it possible to consume the generated structure lazily, we must
+-- 'traverse' with lazy 'StateT'.
+scanM (ScanM step begin) as = fmap fst $ Lazy.runStateT (traverse (asLazy . step) as) =<< begin
 {-# INLINE scanM #-}
 
 {-| Convert a `Fold` into a prescan
