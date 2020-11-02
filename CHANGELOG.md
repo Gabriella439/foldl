@@ -1,3 +1,7 @@
+1.4.10
+
+* Fix space leaks in `scan` / `scanM`
+
 1.4.9
 
 * Implement `vector` utility more efficiently
