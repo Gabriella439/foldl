@@ -978,8 +978,8 @@ hashMap = Fold step begin done
 
 {- | Given a 'Fold', produces a 'HashMap' which applies that fold to each @a@ separated by key @k@.
 
->>> fold (foldByKeyHashMap Control.Foldl.sum) [("a",1), ("b",2), ("b",20), ("a",10)]
-fromList [("a",11),("b",22)]
+>>> List.sort (HashMap.toList (fold (foldByKeyHashMap Control.Foldl.sum) [("a",1), ("b",2), ("b",20), ("a",10)]))
+[("a",11),("b",22)]
 -}
 foldByKeyHashMap :: forall k a b. (Hashable k, Eq k) => Fold a b -> Fold (k, a) (HashMap k b)
 foldByKeyHashMap f = case f of
