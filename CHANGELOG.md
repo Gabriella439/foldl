@@ -1,3 +1,8 @@
+1.4.11
+
+* Fix doctest failure when built against newer versions of the `hashable`
+  package
+
 1.4.10
 
 * Fix space leaks in `scan` / `scanM`
