@@ -160,6 +160,7 @@ import Data.Maybe (fromMaybe)
 import Data.Monoid hiding ((<>))
 import Data.Semigroup (Semigroup(..))
 import Data.Semigroupoid (Semigroupoid)
+import Data.Functor.Extend (Extend(..))
 import Data.Profunctor
 import Data.Sequence ((|>))
 import Data.Vector.Generic (Vector, Mutable)
@@ -259,6 +260,10 @@ instance Applicative (Fold a) where
             done (Pair xL xR) = doneL xL (doneR xR)
         in  Fold step begin done
     {-# INLINE (<*>) #-}
+
+instance Extend (Fold a) where
+    duplicated = duplicate
+    {-# INLINE duplicated #-}
 
 instance Semigroup b => Semigroup (Fold a b) where
     (<>) = liftA2 (<>)
@@ -395,6 +400,10 @@ instance Applicative m => Applicative (FoldM m a) where
             done (Pair xL xR) = doneL xL <*> doneR xR
         in  FoldM step begin done
     {-# INLINE (<*>) #-}
+
+instance Monad m => Extend (FoldM m a) where
+    duplicated = duplicateM
+    {-# INLINE duplicated #-}
 
 instance Functor m => Profunctor (FoldM m) where
     rmap = fmap
