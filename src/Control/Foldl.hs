@@ -168,7 +168,7 @@ import Data.Vector.Generic.Mutable (MVector)
 import Data.Hashable (Hashable)
 import Data.Traversable
 import Numeric.Natural (Natural)
-import System.Random.MWC (GenIO, createSystemRandom, uniformR)
+import System.Random (StdGen, newStdGen, uniformR)
 import Prelude hiding
     ( head
     , last
@@ -807,14 +807,14 @@ random :: FoldM IO a (Maybe a)
 random = FoldM step begin done
   where
     begin = do
-        g <- createSystemRandom
+        g <- newStdGen
         return $! Pair3 g Nothing' (1 :: Int)
 
     step (Pair3 g Nothing'  _) a = return $! Pair3 g (Just' a) 2
     step (Pair3 g (Just' a) m) b = do
-        n <- uniformR (1, m) g
+        let (n, g') = uniformR (1, m) g
         let c = if n == 1 then b else a
-        return $! Pair3 g (Just' c) (m + 1)
+        return $! Pair3 g' (Just' c) (m + 1)
 
     done (Pair3 _ ma _) = return (lazy ma)
 {-# INLINABLE random #-}
@@ -825,7 +825,7 @@ data RandomNState v a = RandomNState
     { _size      ::                !VectorState
     , _reservoir ::                !(Mutable v RealWorld a)
     , _position  :: {-# UNPACK #-} !Int
-    , _gen       :: {-# UNPACK #-} !GenIO
+    , _gen       :: {-# UNPACK #-} !StdGen
     }
 
 -- | Pick several random elements, using reservoir sampling
@@ -841,15 +841,15 @@ randomN n = FoldM step begin done
         let s  = if n <= m' then Complete else Incomplete m'
         return $! RandomNState s mv (i + 1) g
     step (RandomNState  Complete      mv i g) a = do
-        r <- uniformR (0, i - 1) g
+        let (r, g') = uniformR (0, i - 1) g
         if r < n
             then M.unsafeWrite mv r a
             else return ()
-        return (RandomNState Complete mv (i + 1) g)
+        return (RandomNState Complete mv (i + 1) g')
 
     begin = do
         mv  <- M.new n
-        gen <- createSystemRandom
+        gen <- newStdGen
         let s = if n <= 0 then Complete else Incomplete 0
         return (RandomNState s mv 1 gen)
 
