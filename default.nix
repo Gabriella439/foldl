@@ -1,8 +1,8 @@
 let
   nixpkgs = builtins.fetchTarball {
-    url = "https://github.com/NixOs/nixpkgs/archive/312a059bef8b29b4db4e73dc02ff441cab7bb26d.tar.gz";
+    url = "https://github.com/NixOs/nixpkgs/archive/5e8bfbb4c7fd0534d9aa4b1b54da278f96ee3512.tar.gz";
 
-    sha256 = "1j52yvkhw1inp6ilpqy81xv1bbwgwqjn0v9647whampkqgn6dxhk";
+    sha256 = "0xjwbs706lwcgrpgl1xj1fqxb9z6i5zzijyg3crzjffp2la1aijy";
   };
 
   overlay = pkgsNew: pkgsOld: {
@@ -10,6 +10,7 @@ let
       overrides =
         let
           manualOverrides = haskellPackagesNew: haskellPackagesOld: {
+#           random = haskellPackagesOld.random_1_2_0;
           };
 
         in
