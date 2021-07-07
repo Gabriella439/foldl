@@ -1,3 +1,8 @@
+1.4.12
+
+* `Data.Functor.Extend.Extended` instances for `Fold` / `FoldM`
+* Remove dependency on `mwc-random`
+
 1.4.11
 
 * Fix doctest failure when built against newer versions of the `hashable`
