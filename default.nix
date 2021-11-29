@@ -10,7 +10,6 @@ let
       overrides =
         let
           manualOverrides = haskellPackagesNew: haskellPackagesOld: {
-#           random = haskellPackagesOld.random_1_2_0;
           };
 
         in
