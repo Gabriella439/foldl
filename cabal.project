@@ -2,10 +2,5 @@ packages: .
 
 source-repository-package
     type: git
-    location: https://github.com/haskell/mtl.git
-    tag: 5d0f62b
-
-source-repository-package
-    type: git
     location: https://github.com/haskell/random.git
     tag: 5ecc8935994159c6d39088233a0887714aacaf5e
