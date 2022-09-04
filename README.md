@@ -136,7 +136,7 @@ would find useful.
 
 ## Development Status
 
-[![Build Status](https://travis-ci.org/Gabriel439/Haskell-Foldl-Library.png)](https://travis-ci.org/Gabriel439/Haskell-Foldl-Library)
+[![Build Status](https://travis-ci.org/Gabriella439/Haskell-Foldl-Library.png)](https://travis-ci.org/Gabriella439/Haskell-Foldl-Library)
 
 The `foldl` library is pretty stable at this point.  I don't expect there to be
 breaking changes to the API from this point forward unless people discover new
@@ -144,7 +144,7 @@ bugs.
 
 ## License (BSD 3-clause)
 
-Copyright (c) 2016 Gabriel Gonzalez
+Copyright (c) 2016 Gabriella Gonzalez
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
@@ -157,7 +157,7 @@ are permitted provided that the following conditions are met:
   list of conditions and the following disclaimer in the documentation and/or
   other materials provided with the distribution.
 
-* Neither the name of Gabriel Gonzalez nor the names of other contributors may
+* Neither the name of Gabriella Gonzalez nor the names of other contributors may
   be used to endorse or promote products derived from this software without
   specific prior written permission.
 
