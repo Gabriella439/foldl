@@ -3,32 +3,35 @@
 
     Import this module qualified to avoid clashing with the Prelude:
 
->>> import qualified Control.Foldl as L
+>>> import qualified Control.Foldl as Foldl
 
     Use 'fold' to apply a 'Fold' to a list:
 
->>> L.fold L.sum [1..100]
+>>> Foldl.fold Foldl.sum [1..100]
 5050
 
     'Fold's are 'Applicative's, so you can combine them using 'Applicative'
     combinators:
 
 >>> import Control.Applicative
->>> let average = (/) <$> L.sum <*> L.genericLength
+>>> let average = (/) <$> Foldl.sum <*> Foldl.genericLength
 
-    Taking the sum, the sum of squares, ..., upto the sum of x^5
+    … or you can use @do@ notation if you enable the @ApplicativeDo@ language
+    extension:
 
->>> import Data.Traversable
->>> let powerSums = sequenceA [L.premap (^n) L.sum | n <- [1..5]]
->>> L.fold powerSums [1..10]
-[55,385,3025,25333,220825]
+>>> :set -XApplicativeDo
+>>> let average = do total <- Foldl.sum; count <- Foldl.genericLength; return (total / count)
+
+    … or you can use the fact that the `Fold` type implements `Num` to do this:
+
+>>> let average = Foldl.sum / Foldl.genericLength
 
     These combined folds will still traverse the list only once, streaming
     efficiently over the list in constant space without space leaks:
 
->>> L.fold average [1..10000000]
+>>> Foldl.fold average [1..10000000]
 5000000.5
->>> L.fold ((,) <$> L.minimum <*> L.maximum) [1..10000000]
+>>> Foldl.fold ((,) <$> Foldl.minimum <*> Foldl.maximum) [1..10000000]
 (Just 1,Just 10000000)
 
     You might want to try enabling the @-flate-dmd-anal@ flag when compiling
@@ -204,7 +207,7 @@ import qualified Data.Semigroupoid
 
 {- $setup
 
->>> import qualified Control.Foldl as L
+>>> import qualified Control.Foldl as Foldl
 
 >>> _2 f (x, y) = fmap (\i -> (x, i)) (f y)
 
@@ -529,7 +532,7 @@ foldM (FoldM step begin done) as0 = do
 
 {-| Convert a strict left 'Fold' into a scan
 
-    >>> L.scan L.length [1..5]
+    >>> Foldl.scan Foldl.length [1..5]
     [0,1,2,3,4,5]
 -}
 scan :: Fold a b -> [a] -> [b]
@@ -543,7 +546,7 @@ scan (Fold step begin done) as = foldr cons nil as begin
 
     \"Prescan\" means that the last element of the scan is not included
 
-    >>> L.prescan L.length [1..5]
+    >>> Foldl.prescan Foldl.length [1..5]
     [0,1,2,3,4]
 -}
 prescan :: Traversable t => Fold a b -> t a -> t b
@@ -560,7 +563,7 @@ prescan (Fold step begin done) as = bs
 
     \"Postscan\" means that the first element of the scan is not included
 
-    >>> L.postscan L.length [1..5]
+    >>> Foldl.postscan Foldl.length [1..5]
     [1,2,3,4,5]
 -}
 postscan :: Traversable t => Fold a b -> t a -> t b
@@ -1175,10 +1178,10 @@ _Fold1 step = Fold step_ Nothing' lazy
 
 > fold (premap f folder) list = fold folder (List.map f list)
 
->>> fold (premap Sum L.mconcat) [1..10]
+>>> fold (premap Sum Foldl.mconcat) [1..10]
 Sum {getSum = 55}
 
->>> fold L.mconcat (List.map Sum [1..10])
+>>> fold Foldl.mconcat (List.map Sum [1..10])
 Sum {getSum = 55}
 
 > premap id = id
@@ -1268,10 +1271,10 @@ otherwise behaves the same as the original fold.
 
 > fold (drop n folder) list = fold folder (Data.List.genericDrop n list)
 
->>> L.fold (L.drop 3 L.sum) [10, 20, 30, 1, 2, 3]
+>>> Foldl.fold (Foldl.drop 3 Foldl.sum) [10, 20, 30, 1, 2, 3]
 6
 
->>> L.fold (L.drop 10 L.sum) [10, 20, 30, 1, 2, 3]
+>>> Foldl.fold (Foldl.drop 10 Foldl.sum) [10, 20, 30, 1, 2, 3]
 0
 -}
 
@@ -1289,10 +1292,10 @@ otherwise behaves the same as the original fold.
 
 > foldM (dropM n folder) list = foldM folder (Data.List.genericDrop n list)
 
->>> L.foldM (L.dropM 3 (L.generalize L.sum)) [10, 20, 30, 1, 2, 3]
+>>> Foldl.foldM (Foldl.dropM 3 (Foldl.generalize Foldl.sum)) [10, 20, 30, 1, 2, 3]
 6
 
->>> L.foldM (L.dropM 10 (L.generalize L.sum)) [10, 20, 30, 1, 2, 3]
+>>> Foldl.foldM (Foldl.dropM 10 (Foldl.generalize Foldl.sum)) [10, 20, 30, 1, 2, 3]
 0
 -}
 
@@ -1329,7 +1332,7 @@ type Handler a b =
 >>> fold (handles (filtered even) sum) [1..10]
 30
 
->>> fold (handles _2 L.mconcat) [(1,"Hello "),(2,"World"),(3,"!")]
+>>> fold (handles _2 Foldl.mconcat) [(1,"Hello "),(2,"World"),(3,"!")]
 "Hello World!"
 
 > handles id = id
@@ -1348,17 +1351,17 @@ handles k (Fold step begin done) = Fold step' begin done
 
 {- | @(foldOver f folder xs)@ folds all values from a Lens, Traversal, Prism or Fold with the given folder
 
->>> foldOver (_Just . both) L.sum (Just (2, 3))
+>>> foldOver (_Just . both) Foldl.sum (Just (2, 3))
 5
 
->>> foldOver (_Just . both) L.sum Nothing
+>>> foldOver (_Just . both) Foldl.sum Nothing
 0
 
-> L.foldOver f folder xs == L.fold folder (xs^..f)
+> Foldl.foldOver f folder xs == Foldl.fold folder (xs^..f)
 
-> L.foldOver (folded.f) folder == L.fold (handles f folder)
+> Foldl.foldOver (folded.f) folder == Foldl.fold (handles f folder)
 
-> L.foldOver folded == L.fold
+> Foldl.foldOver folded == Foldl.fold
 
 -}
 foldOver :: Handler s a -> Fold a b -> s -> b
@@ -1417,9 +1420,9 @@ handlesM k (FoldM step begin done) = FoldM step' begin done
 
 {- | @(foldOverM f folder xs)@ folds all values from a Lens, Traversal, Prism or Fold monadically with the given folder
 
-> L.foldOverM (folded.f) folder == L.foldM (handlesM f folder)
+> Foldl.foldOverM (folded.f) folder == Foldl.foldM (handlesM f folder)
 
-> L.foldOverM folded == L.foldM
+> Foldl.foldOverM folded == Foldl.foldM
 
 -}
 foldOverM :: Monad m => HandlerM m s a -> FoldM m a b -> s -> m b
@@ -1444,7 +1447,7 @@ folded k ts = contramap (\_ -> ()) (F.traverse_ k ts)
 >>> fold (handles (filtered even) sum) [1..10]
 30
 
->>> foldM (handlesM (filtered even) (L.mapM_ print)) [1..10]
+>>> foldM (handlesM (filtered even) (Foldl.mapM_ print)) [1..10]
 2
 4
 6
