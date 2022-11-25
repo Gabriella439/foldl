@@ -74,7 +74,6 @@ import Control.Monad.Trans.State.Strict
 import Data.Functor.Identity
 import Data.Monoid hiding ((<>))
 import Data.Profunctor
-import Data.Semigroup (Semigroup(..))
 import Data.Traversable
 import Data.Tuple (swap)
 import Prelude hiding ((.), id, scanr)

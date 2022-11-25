@@ -161,7 +161,6 @@ import Data.HashMap.Strict (HashMap)
 import Data.Map.Strict (Map, alter)
 import Data.Maybe (fromMaybe)
 import Data.Monoid hiding ((<>))
-import Data.Semigroup (Semigroup(..))
 import Data.Semigroupoid (Semigroupoid)
 import Data.Functor.Extend (Extend(..))
 import Data.Profunctor

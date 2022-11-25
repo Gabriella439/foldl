@@ -2,7 +2,6 @@
 module Control.Foldl.Optics where
 
 import Data.Profunctor
-import Control.Applicative
 
 type Prism s t a b = forall p f. (Choice p, Applicative f) => p a (f b) -> p s (f t)
 
