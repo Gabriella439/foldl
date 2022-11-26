@@ -1,3 +1,7 @@
+1.4.13
+
+* New "Control.Foldl.NonEmpty" module for folding non-empty containers
+
 1.4.12
 
 * `Data.Functor.Extend.Extended` instances for `Fold` / `FoldM`
