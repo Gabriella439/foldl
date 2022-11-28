@@ -155,6 +155,11 @@ fromFold :: Fold a b -> Fold1 a b
 fromFold (Fold step begin done) = Fold1 (\a -> Fold step (step begin a) done)
 {-# INLINABLE fromFold #-}
 
+-- | Fold all values within a non-empty container into a `NonEmpty` list
+nonEmpty :: Fold1 a (NonEmpty a)
+nonEmpty = Fold1 (\a -> fmap (a :|) Foldl.list)
+{-# INLINEABLE nonEmpty #-}
+
 -- | Fold all values within a non-empty container using (`<>`)
 sconcat :: Semigroup a => Fold1 a a
 sconcat = Fold1 (\begin -> Fold (<>) begin id)
