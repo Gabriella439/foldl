@@ -15,6 +15,7 @@ import Control.Applicative (liftA2)
 import Control.Foldl (Fold(..))
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Profunctor (Profunctor(..))
+import Data.Semigroup.Foldable (Foldable1(..))
 import Prelude hiding (head, last, minimum, maximum)
 
 import qualified Control.Foldl as Foldl
@@ -143,8 +144,10 @@ instance Floating b => Floating (Fold1 a b) where
     {-# INLINE logBase #-}
 
 -- | Apply a strict left `Fold1` to a `NonEmpty` list
-fold1 :: Fold1 a b -> NonEmpty a -> b
-fold1 (Fold1 k) (a :| as) = Foldl.fold (k a) as
+fold1 :: Foldable1 f => Fold1 a b -> f a -> b
+fold1 (Fold1 k) as1 = Foldl.fold (k a) as
+  where
+    a :| as = toNonEmpty as1
 {-# INLINABLE fold1 #-}
 
 -- | Promote any `Fold` to an equivalent `Fold1`
