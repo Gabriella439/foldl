@@ -1236,8 +1236,6 @@ prefilter f (Fold step begin done) = Fold step' begin done
 
 {-| @(prefilterM f folder)@ returns a new 'FoldM' where the folder's input is used
   only when the input satisfies a monadic predicate f.
-
-> foldM (prefilterM p folder) list = foldM folder (filter p list)
 -}
 prefilterM :: (Monad m) => (a -> m Bool) -> FoldM m a r -> FoldM m a r
 prefilterM f (FoldM step begin done) = FoldM step' begin done
