@@ -155,6 +155,20 @@ fromFold :: Fold a b -> Fold1 a b
 fromFold (Fold step begin done) = Fold1 (\a -> Fold step (step begin a) done)
 {-# INLINABLE fromFold #-}
 
+-- | Promot any `Fold1` to an equivalent `Fold`
+toFold :: Fold1 a b -> Fold a (Maybe b)
+toFold (Fold1 k0) = Fold step begin done
+  where
+    begin = Left k0
+
+    step (Left k) a = Right (k a)
+    step (Right (Fold step' begin' done')) a =
+        Right (Fold step' (step' begin' a) done')
+
+    done (Right (Fold _ begin' done')) = Just (done' begin')
+    done (Left _) = Nothing
+{-# INLINABLE toFold #-}
+
 -- | Fold all values within a non-empty container into a `NonEmpty` list
 nonEmpty :: Fold1 a (NonEmpty a)
 nonEmpty = Fold1 (\a -> fmap (a :|) Foldl.list)
