@@ -156,7 +156,7 @@ fromFold :: Fold a b -> Fold1 a b
 fromFold (Fold step begin done) = Fold1 (\a -> Fold step (step begin a) done)
 {-# INLINABLE fromFold #-}
 
--- | Promot any `Fold1` to an equivalent `Fold`
+-- | Promote any `Fold1` to an equivalent `Fold`
 toFold :: Fold1 a b -> Fold a (Maybe b)
 toFold (Fold1 k0) = Fold step begin done
   where
