@@ -94,7 +94,7 @@ the composite step function and starting state:
 ```haskell
 (,) <$> Fold.sum <*> Fold.length = Fold step (Pair 0 0) done
   where
-    step (Pair x y) = Pair (x + n) (y + 1)
+    step (Pair x y) n = Pair (x + n) (y + 1)
 
     done (Pair x y) = (x, y)
 ```
