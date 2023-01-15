@@ -1,3 +1,9 @@
+1.4.14
+
+- Add [`Control.Foldl.NonEmpty.nonEmpty`](https://github.com/Gabriella439/foldl/pull/186)
+- Add [`Control.Foldl.NonEmpty.toFold`](https://github.com/Gabriella439/foldl/pull/191)
+ - [Generalize `fold1` to work with `Foldable1`](https://github.com/Gabriella439/foldl/pull/185)
+
 1.4.13
 
 * New "Control.Foldl.NonEmpty" module for folding non-empty containers
