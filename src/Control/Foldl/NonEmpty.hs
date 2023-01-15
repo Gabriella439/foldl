@@ -13,6 +13,7 @@ module Control.Foldl.NonEmpty where
 
 import Control.Applicative (liftA2)
 import Control.Foldl (Fold(..))
+import Control.Foldl.Internal (Either'(..))
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Profunctor (Profunctor(..))
 import Data.Semigroup.Foldable (Foldable1(..))
@@ -154,6 +155,20 @@ fold1 (Fold1 k) as1 = Foldl.fold (k a) as
 fromFold :: Fold a b -> Fold1 a b
 fromFold (Fold step begin done) = Fold1 (\a -> Fold step (step begin a) done)
 {-# INLINABLE fromFold #-}
+
+-- | Promote any `Fold1` to an equivalent `Fold`
+toFold :: Fold1 a b -> Fold a (Maybe b)
+toFold (Fold1 k0) = Fold step begin done
+  where
+    begin = Left' k0
+
+    step (Left' k) a = Right' (k a)
+    step (Right' (Fold step' begin' done')) a =
+        Right' (Fold step' (step' begin' a) done')
+
+    done (Right' (Fold _ begin' done')) = Just (done' begin')
+    done (Left' _) = Nothing
+{-# INLINABLE toFold #-}
 
 -- | Fold all values within a non-empty container into a `NonEmpty` list
 nonEmpty :: Fold1 a (NonEmpty a)
