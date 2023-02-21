@@ -11,9 +11,19 @@
 
         overlay = pkgsNew: pkgsOld: {
           haskellPackages = pkgsOld.haskellPackages.override (old: {
-            overrides = pkgsNew.haskell.lib.packageSourceOverrides {
-              foldl = ./.;
-            };
+            overrides =
+            pkgsNew.lib.fold
+              pkgsNew.lib.composeExtensions
+              (_: _: { })
+              [ (pkgsNew.haskell.lib.packageSourceOverrides {
+                  foldl = ./.;
+                })
+                (pkgsNew.haskell.lib.packagesFromDirectory {
+                  directory = ./nix;
+                })
+                (haskellPackagesNew: haskellPackagesOld: {
+                })
+              ];
           });
         };
 
