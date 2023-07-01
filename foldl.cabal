@@ -35,7 +35,7 @@ Library
         unordered-containers        < 0.3 ,
         hashable                    < 1.5 ,
         contravariant               < 1.6 ,
-        profunctors  >= 3.2      && < 5.7 ,
+        profunctors  >= 4.3.2    && < 5.7 ,
         semigroupoids >= 1.0     && < 6.1 ,
         comonad      >= 4.0      && < 6
     if impl(ghc < 8.0)

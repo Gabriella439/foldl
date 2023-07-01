@@ -41,6 +41,7 @@
 {-# LANGUAGE BangPatterns              #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE MultiParamTypeClasses     #-}
 {-# LANGUAGE RankNTypes                #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 {-# LANGUAGE Trustworthy               #-}
@@ -164,6 +165,7 @@ import Data.Monoid hiding ((<>))
 import Data.Semigroupoid (Semigroupoid)
 import Data.Functor.Extend (Extend(..))
 import Data.Profunctor
+import Data.Profunctor.Sieve
 import Data.Sequence ((|>))
 import Data.Vector.Generic (Vector, Mutable)
 import Data.Vector.Generic.Mutable (MVector)
@@ -242,8 +244,19 @@ instance Profunctor Fold where
     rmap = fmap
 
 instance Choice Fold where
-  right' (Fold step begin done) = Fold (liftA2 step) (Right begin) (fmap done)
-  {-# INLINE right' #-}
+    right' (Fold step begin done) = Fold (liftA2 step) (Right begin) (fmap done)
+    {-# INLINE right' #-}
+
+instance Cosieve Fold [] where
+    cosieve = fold
+    {-# INLINE cosieve #-}
+
+instance Costrong Fold where
+    unfirst p = fmap f list
+      where
+        f as = b
+          where (b, d) = fold p [ (a, d) | a <- as ]
+    {-# INLINE unfirst #-}
 
 instance Comonad (Fold a) where
     extract (Fold _ begin done) = done begin
