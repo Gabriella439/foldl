@@ -254,7 +254,8 @@ instance Cosieve Fold [] where
 instance Costrong Fold where
     unfirst p = fmap f list
       where
-        f fa = b where (b, d) = fold p ((\a -> (a, d)) <$> fa)
+        f as = b
+          where (b, d) = fold p [ (a, d) | a <- as ]
     {-# INLINE unfirst #-}
 
 instance Comonad (Fold a) where
