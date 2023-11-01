@@ -149,7 +149,7 @@ instance Monoid b => Monoid (Scan a b) where
     mempty = pure mempty
     {-# INLINE mempty #-}
 
-    mappend = liftA2 mappend
+    mappend = (<>)
     {-# INLINE mappend #-}
 
 instance Num b => Num (Scan a b) where
@@ -299,7 +299,7 @@ instance (Monad m, Monoid b) => Monoid (ScanM m a b) where
     mempty = pure mempty
     {-# INLINE mempty #-}
 
-    mappend = liftA2 mappend
+    mappend = (<>)
     {-# INLINE mappend #-}
 
 instance (Monad m, Num b) => Num (ScanM m a b) where

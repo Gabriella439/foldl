@@ -54,7 +54,7 @@ instance Monoid b => Monoid (Fold1 a b) where
     mempty = pure mempty
     {-# INLINE mempty #-}
 
-    mappend = liftA2 mappend
+    mappend = (<>)
     {-# INLINE mappend #-}
 
 instance Num b => Num (Fold1 a b) where

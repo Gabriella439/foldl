@@ -300,7 +300,7 @@ instance Monoid b => Monoid (Fold a b) where
     mempty = pure mempty
     {-# INLINE mempty #-}
 
-    mappend = liftA2 mappend
+    mappend = (<>)
     {-# INLINE mappend #-}
 
 instance Num b => Num (Fold a b) where
@@ -434,7 +434,7 @@ instance (Monoid b, Monad m) => Monoid (FoldM m a b) where
     mempty = pure mempty
     {-# INLINE mempty #-}
 
-    mappend = liftA2 mappend
+    mappend = (<>)
     {-# INLINE mappend #-}
 
 instance (Monad m, Num b) => Num (FoldM m a b) where
