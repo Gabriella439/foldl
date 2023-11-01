@@ -1,10 +1,10 @@
-name: Haskell CI
+name: Haskell
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
   build:
@@ -12,23 +12,46 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - uses: haskell/actions/setup@v1.2
-    - name: Cache
-      uses: actions/cache@v1
+    - uses: actions/checkout@v4
+    - uses: haskell-actions/setup@v2
+      id:   setup
+      # Default options, written out for clarity:
+      with:
+        ghc-version: latest
+        cabal-update: true
+
+    - name: Configure build
+      run: |
+        cabal configure --enable-tests --enable-benchmarks --write-ghc-environment-files=always
+        cabal build --dry-run
+      # The latter creates the build plan in dist-newstyle/cache/plan.json
+
+    - name: Restore cached dependencies
+      uses: actions/cache/restore@v3
+      id:   cache
       env:
         cache-name: cache-cabal
       with:
         path: ~/.cabal
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.cabal') }}-${{ hashFiles('**/cabal.project') }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-build-
-          ${{ runner.os }}-
+        key:          ${{ runner.os }}-${{ env.cache-name }}-ghc-${{ steps.setup.outputs.ghc-version}}-plan-${{ hashFiles('dist-newstyle/cache/plan.json') }}
+        restore-keys: ${{ runner.os }}-${{ env.cache-name }}-ghc-${{ steps.setup.outputs.ghc-version}}-
 
     - name: Install dependencies
+      if:   steps.cache.outputs.cache-hit != 'true'
       run: |
-        cabal update
-        cabal build --only-dependencies --enable-tests --enable-benchmarks
+        cabal build --only-dependencies
+
+    - name: Cache dependencies
+      uses: actions/cache/save@v3
+      if:   steps.cache.outputs.cache-hit != 'true'
+      with:
+        path: ~/.cabal
+        key:  ${{ steps.cache.outputs.cache-primary-key }}
+
     - name: Build
-      run: cabal build --enable-tests --enable-benchmarks all
+      run: |
+        cabal build all
+
+    - name: Test
+      run: |
+        cabal test all

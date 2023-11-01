@@ -136,7 +136,7 @@ would find useful.
 
 ## Development Status
 
-[![Build Status](https://travis-ci.org/Gabriella439/Haskell-Foldl-Library.png)](https://travis-ci.org/Gabriella439/Haskell-Foldl-Library)
+[![Build Status](https://github.com/Gabriella439/foldl/actions/workflows/haskell.yml/badge.svg)](https://github.com/Gabriella439/foldl/actions/workflows/haskell.yml)
 
 The `foldl` library is pretty stable at this point.  I don't expect there to be
 breaking changes to the API from this point forward unless people discover new
