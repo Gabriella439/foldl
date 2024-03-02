@@ -1,3 +1,7 @@
+1.4.16
+
+- Add [`Control.Foldl.postmapM`]
+
 1.4.14
 
 - Add [`Control.Foldl.NonEmpty.nonEmpty`](https://github.com/Gabriella439/foldl/pull/186)

@@ -123,6 +123,7 @@ module Control.Foldl (
     , _Fold1
     , premap
     , premapM
+    , postmapM
     , prefilter
     , prefilterM
     , predropWhile
@@ -1226,6 +1227,19 @@ premapM f (FoldM step begin done) = FoldM step' begin done
   where
     step' x a = f a >>= step x
 {-# INLINABLE premapM #-}
+
+{-| @(postmapM f folder)@ returns a new 'FoldM' where f is applied to the final value.
+
+> postmapM return = id
+>
+> postmapM (f >=> g) = postmapM g . postmapM f
+
+> postmapM k (pure r) = k r
+-}
+postmapM :: Monad m => (a -> m r) -> FoldM m x a -> FoldM m x r
+postmapM f (FoldM step begin done) = FoldM step begin done'
+  where done' x = done x >>= f
+{-# INLINABLE postmapM #-}
 
 {-| @(prefilter f folder)@ returns a new 'Fold' where the folder's input is used
   only when the input satisfies a predicate f
