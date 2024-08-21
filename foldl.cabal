@@ -33,7 +33,7 @@ Library
         vector       >= 0.7      && < 0.14,
         containers   >= 0.5.0.0  && < 0.8 ,
         unordered-containers        < 0.3 ,
-        hashable                    < 1.5 ,
+        hashable                    < 1.6 ,
         contravariant               < 1.6 ,
         profunctors  >= 4.3.2    && < 5.7 ,
         semigroupoids >= 1.0     && < 6.1 ,
