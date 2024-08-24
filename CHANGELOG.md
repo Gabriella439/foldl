@@ -1,6 +1,8 @@
+- Add pattern synonym `Fold1_` that makes the initial, step and extraction functions explicit.
+
 1.4.16
 
-- Add [`Control.Foldl.postmapM`]
+- Add [`Control.Foldl.postmapM`](https://github.com/Gabriella439/foldl/pull/205)
 
 1.4.15
 

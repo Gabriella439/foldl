@@ -1,3 +1,8 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE CPP #-}
+
 {-| This module provides a `Fold1` type that is a \"non-empty\" analog of the
     `Fold` type, meaning that it requires at least one input element in order to
     produce a result
@@ -11,7 +16,7 @@
 
 module Control.Foldl.NonEmpty (
     -- * Fold Types
-      Fold1(..)
+      Fold1(.., Fold1_)
 
     -- * Folding
     , Control.Foldl.NonEmpty.fold1
@@ -47,6 +52,40 @@ import qualified Control.Foldl as Foldl
     element
 -}
 data Fold1 a b = Fold1 (a -> Fold a b)
+
+{-| @Fold1_@ is an alternative to the @Fold1@ constructor if you need to
+    explicitly work with an initial, step and extraction function.
+
+    @Fold1_@ is similar to the @Fold@ constructor, which also works with an
+    initial, step and extraction function. However, note that @Fold@ takes the
+    step function as the first argument and the initial accumulator as the
+    second argument, whereas @Fold1_@ takes them in swapped order:
+
+    @Fold1_ @ @ initial @ @ step @ @ extract@
+
+    While @Fold@ resembles 'Prelude.foldl', @Fold1_@ resembles
+    'Data.Foldable1.foldlMap1'.
+-}
+pattern Fold1_ :: forall a b. forall x. (a -> x) -> (x -> a -> x) -> (x -> b) -> Fold1 a b
+pattern Fold1_ begin step done <- (toFold_ -> (begin, step, done))
+  where Fold1_ begin step done = Fold1 $ \a -> Fold step (begin a) done
+#if __GLASGOW_HASKELL__ >= 902
+{-# INLINABLE Fold1_ #-}
+#endif
+{-# COMPLETE Fold1_ :: Fold1 #-}
+
+toFold_ :: Fold1 a b -> (a -> Fold a b, Fold a b -> a -> Fold a b, Fold a b -> b)
+toFold_ (Fold1 (f :: a -> Fold a b)) = (begin', step', done')
+  where
+    done' :: Fold a b -> b
+    done' (Fold _step begin done) = done begin
+
+    step' :: Fold a b -> a -> Fold a b
+    step' (Fold step begin done) a = Fold step (step begin a) done
+
+    begin' :: a -> Fold a b
+    begin' = f
+{-# INLINABLE toFold_ #-}
 
 instance Functor (Fold1 a) where
     fmap f (Fold1 k) = Fold1 (fmap (fmap f) k)
