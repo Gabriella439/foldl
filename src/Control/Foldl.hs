@@ -92,11 +92,11 @@ module Control.Foldl (
     , Control.Foldl.mapM_
     , sink
 
-    -- * Generic Folds
+    -- ** Generic Folds
     , genericLength
     , genericIndex
 
-    -- * Container folds
+    -- ** Container Folds
     , list
     , revList
     , nub

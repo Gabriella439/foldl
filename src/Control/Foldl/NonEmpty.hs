@@ -9,7 +9,29 @@
     `fromFold`.
 -}
 
-module Control.Foldl.NonEmpty where
+module Control.Foldl.NonEmpty (
+    -- * Fold Types
+      Fold1(..)
+
+    -- * Folding
+    , Control.Foldl.NonEmpty.fold1
+
+    -- * Conversion between Fold and Fold1
+    , fromFold
+    , toFold
+
+    -- * Folds
+    , sconcat
+    , head
+    , last
+    , maximum
+    , maximumBy
+    , minimum
+    , minimumBy
+
+    -- ** Non-empty Container Folds
+    , nonEmpty
+    ) where
 
 import Control.Applicative (liftA2)
 import Control.Foldl (Fold(..))
