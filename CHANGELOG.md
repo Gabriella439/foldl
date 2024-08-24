@@ -1,3 +1,4 @@
+- Add [Fold1 utilities](): `purely`, `purely_`
 - Add pattern synonym `Fold1_` that makes the initial, step and extraction functions explicit.
 
 1.4.16

@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ViewPatterns #-}
@@ -36,6 +37,10 @@ module Control.Foldl.NonEmpty (
 
     -- ** Non-empty Container Folds
     , nonEmpty
+
+    -- * Utilities
+    , purely
+    , purely_
     ) where
 
 import Control.Applicative (liftA2)
@@ -282,3 +287,13 @@ minimumBy cmp = Fold1 (\begin -> Fold min' begin id)
         GT -> y
         _  -> x
 {-# INLINABLE minimumBy #-}
+
+-- | Upgrade a fold to accept the 'Fold1' type
+purely :: (forall x . (a -> x) -> (x -> a -> x) -> (x -> b) -> r) -> Fold1 a b -> r
+purely f (Fold1_ begin step done) = f begin step done
+{-# INLINABLE purely #-}
+
+-- | Upgrade a more traditional fold to accept the `Fold1` type
+purely_ :: (forall x . (a -> x) -> (x -> a -> x) -> x) -> Fold1 a b -> b
+purely_ f (Fold1_ begin step done) = done (f begin step)
+{-# INLINABLE purely_ #-}
