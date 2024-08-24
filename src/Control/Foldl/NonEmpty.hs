@@ -51,6 +51,7 @@ module Control.Foldl.NonEmpty (
     -- * Utilities
     , purely
     , purely_
+    , premap
     ) where
 
 import Control.Applicative (liftA2)
@@ -62,6 +63,14 @@ import Data.Semigroup.Foldable (Foldable1(..))
 import Prelude hiding (head, last, minimum, maximum)
 
 import qualified Control.Foldl as Foldl
+
+{- $setup
+
+>>> import qualified Control.Foldl.NonEmpty as Foldl1
+>>> import qualified Data.List.NonEmpty as NonEmpty
+>>> import Data.Monoid (Sum(..))
+
+-}
 
 {-| A `Fold1` is like a `Fold` except that it consumes at least one input
     element
@@ -107,9 +116,7 @@ instance Functor (Fold1 a) where
     {-# INLINE fmap #-}
 
 instance Profunctor Fold1 where
-    lmap f (Fold1 k) = Fold1 k'
-      where
-        k' a = lmap f (k (f a))
+    lmap = premap
     {-# INLINE lmap #-}
 
     rmap = fmap
@@ -307,3 +314,27 @@ purely f (Fold1_ begin step done) = f begin step done
 purely_ :: (forall x . (a -> x) -> (x -> a -> x) -> x) -> Fold1 a b -> b
 purely_ f (Fold1_ begin step done) = done (f begin step)
 {-# INLINABLE purely_ #-}
+
+{-| @(premap f folder)@ returns a new 'Fold1' where f is applied at each step
+
+> Foldl1.fold1 (premap f folder) list = Foldl1.fold1 folder (NonEmpty.map f list)
+
+>>> Foldl1.fold1 (premap Sum Foldl1.sconcat) (1 :| [2..10])
+Sum {getSum = 55}
+
+>>> Foldl1.fold1 Foldl1.sconcat $ NonEmpty.map Sum (1 :| [2..10])
+Sum {getSum = 55}
+
+> premap id = id
+>
+> premap (f . g) = premap g . premap f
+
+> premap k (pure r) = pure r
+>
+> premap k (f <*> x) = premap k f <*> premap k x
+-}
+premap :: (a -> b) -> Fold1 b r -> Fold1 a r
+premap f (Fold1 k) = Fold1 k'
+  where
+    k' a = lmap f (k (f a))
+{-# INLINABLE premap #-}
