@@ -62,7 +62,8 @@ Benchmark Foldl
     Build-Depends:
         base,
         criterion,
-        foldl
+        foldl,
+        profunctors
     GHC-Options: -O2 -Wall -rtsopts -with-rtsopts=-T
     Default-Language: Haskell2010
 

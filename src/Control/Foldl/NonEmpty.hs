@@ -52,14 +52,23 @@ module Control.Foldl.NonEmpty (
     , purely
     , purely_
     , premap
+    , FromMaybe(..)
+    , Handler1
+    , handles
+    , foldOver
+    , folded1
     ) where
 
-import Control.Applicative (liftA2)
+import Control.Applicative (liftA2, Const(..))
 import Control.Foldl (Fold(..))
 import Control.Foldl.Internal (Either'(..))
 import Data.List.NonEmpty (NonEmpty(..))
+import Data.Monoid (Dual(..))
+import Data.Functor.Apply (Apply)
 import Data.Profunctor (Profunctor(..))
-import Data.Semigroup.Foldable (Foldable1(..))
+import Data.Semigroup.Foldable (Foldable1(..), traverse1_)
+import Data.Functor.Contravariant (Contravariant(..))
+
 import Prelude hiding (head, last, minimum, maximum)
 
 import qualified Control.Foldl as Foldl
@@ -68,7 +77,13 @@ import qualified Control.Foldl as Foldl
 
 >>> import qualified Control.Foldl.NonEmpty as Foldl1
 >>> import qualified Data.List.NonEmpty as NonEmpty
+>>> import Data.Functor.Apply (Apply(..))
+>>> import Data.Semigroup.Traversable (Traversable1(..))
 >>> import Data.Monoid (Sum(..))
+
+>>> _2 f (x, y) = fmap (\i -> (x, i)) (f y)
+
+>>> both f (x, y) = (,) <$> f x <.> f y
 
 -}
 
@@ -338,3 +353,81 @@ premap f (Fold1 k) = Fold1 k'
   where
     k' a = lmap f (k (f a))
 {-# INLINABLE premap #-}
+
+{-|
+> instance Monad m => Semigroup (FromMaybe m a) where
+>     mappend (FromMaybe f) (FromMaybe g) = FromMaybeM (f . Just . g)
+-}
+newtype FromMaybe b = FromMaybe { appFromMaybe :: Maybe b -> b }
+
+instance Semigroup (FromMaybe b) where
+    FromMaybe f <> FromMaybe g = FromMaybe (f . (Just $!) . g)
+    {-# INLINE (<>) #-}
+
+{-| A handler for the upstream input of a `Fold1`
+
+    This is compatible with van Laarhoven optics as defined in the lens package.
+    Any lens, fold1 or traversal1 will type-check as a `Handler1`.
+-}
+type Handler1 a b =
+    forall x. (b -> Const (Dual (FromMaybe x)) b) -> a -> Const (Dual (FromMaybe x)) a
+
+{-| @(handles t folder)@ transforms the input of a `Fold1` using a Lens,
+    Traversal1, or Fold1 optic:
+
+> handles _1        :: Fold1 a r -> Fold1 (a, b) r
+> handles traverse1 :: Traversable1 t => Fold1 a r -> Fold1 (t a) r
+> handles folded1   :: Foldable1    t => Fold1 a r -> Fold1 (t a) r
+
+>>> Foldl1.fold1 (handles traverse1 Foldl1.nonEmpty) $ (1 :| [2..4]) :| [ 5 :| [6,7], 8 :| [9,10] ]
+1 :| [2,3,4,5,6,7,8,9,10]
+
+>>> Foldl1.fold1 (handles _2 Foldl1.sconcat) $ (1,"Hello ") :| [(2,"World"),(3,"!")]
+"Hello World!"
+
+> handles id = id
+>
+> handles (f . g) = handles f . handles g
+
+> handles t (pure r) = pure r
+>
+> handles t (f <*> x) = handles t f <*> handles t x
+-}
+handles :: forall a b r. Handler1 a b -> Fold1 b r -> Fold1 a r
+handles k (Fold1_ begin step done) = Fold1_ begin' step' done
+  where
+    begin' = stepAfromMaybe Nothing
+    step' x = stepAfromMaybe (Just $! x)
+    stepAfromMaybe = flip (appFromMaybe . getDual . getConst . k (Const . Dual . FromMaybe . flip stepBfromMaybe))
+    stepBfromMaybe = maybe begin step
+{-# INLINABLE handles #-}
+
+{- | @(foldOver f folder xs)@ folds all values from a Lens, Traversal1 or Fold1 optic with the given folder
+
+>>> foldOver (_2 . both) Foldl1.nonEmpty (1, (2, 3))
+2 :| [3]
+
+> Foldl1.foldOver f folder xs == Foldl1.fold1 folder (xs ^.. f)
+
+> Foldl1.foldOver (folded1 . f) folder == Foldl1.fold1 (Foldl1.handles f folder)
+
+> Foldl1.foldOver folded1 == Foldl1.fold1
+
+-}
+foldOver :: Handler1 s a -> Fold1 a b -> s -> b
+foldOver l (Fold1_ begin step done) =
+    done . stepSfromMaybe Nothing
+  where
+    stepSfromMaybe = flip (appFromMaybe . getDual . getConst . l (Const . Dual . FromMaybe . flip stepAfromMaybe))
+    stepAfromMaybe = maybe begin step
+{-# INLINABLE foldOver #-}
+
+{-|
+> handles folded1 :: Foldable1 t => Fold1 a r -> Fold1 (t a) r
+-}
+folded1
+    :: (Contravariant f, Apply f, Foldable1 t)
+    => (a -> f a) -> (t a -> f (t a))
+folded1 k ts = contramap (\_ -> ()) (traverse1_ k ts)
+{-# INLINABLE folded1 #-}
+
