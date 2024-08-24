@@ -13,6 +13,16 @@
     which can make use of the non-empty input guarantee (e.g. `head`).  For
     all other utilities you can convert them from the equivalent `Fold` using
     `fromFold`.
+
+    Import this module qualified to avoid clashing with the Prelude:
+
+>>> import qualified Control.Foldl.NonEmpty as Foldl1
+
+    Use 'fold1' to apply a 'Fold1' to a non-empty list:
+
+>>> Foldl1.fold1 Foldl1.last (1 :| [2..10])
+10
+
 -}
 
 module Control.Foldl.NonEmpty (
