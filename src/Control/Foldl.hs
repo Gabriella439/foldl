@@ -160,8 +160,7 @@ import Data.Foldable (Foldable)
 import Data.Functor.Identity (Identity, runIdentity)
 import Data.Functor.Contravariant (Contravariant(..))
 import Data.HashMap.Strict (HashMap)
-import Data.Map.Strict (Map, alter)
-import Data.Maybe (fromMaybe)
+import Data.Map.Strict (Map)
 import Data.Monoid hiding ((<>))
 import Data.Semigroupoid (Semigroupoid)
 import Data.Functor.Extend (Extend(..))
@@ -979,7 +978,7 @@ foldByKeyMap f = case f of
   Fold (step0 :: x -> a -> x) (ini0 :: x) (end0 :: x -> b) ->
     let
       step :: Map k x -> (k,a) -> Map k x
-      step mp (k,a) = Map.alter addToMap k mp where
+      step !mp (k,a) = Map.alter addToMap k mp where
         addToMap Nothing         = Just $ step0 ini0 a
         addToMap (Just existing) = Just $ step0 existing a
 
@@ -1490,10 +1489,8 @@ projection function. Returns the folded result grouped as a map keyed by the
 group.
 
 -}
-groupBy :: Ord g => (a -> g) -> Fold a r -> Fold a (Map g r)
-groupBy grouper (Fold f i e) = Fold f' mempty (fmap e)
-  where
-    f' !m !a = alter (\o -> Just (f (fromMaybe i o) a)) (grouper a) m
+groupBy :: Ord k => (a -> k) -> Fold a b -> Fold a (Map k b)
+groupBy f = premap (\(!a) -> (f a, a)) . foldByKeyMap
 {-# INLINABLE groupBy #-}
 
 {-| Combine two folds into a fold over inputs for either of them.
