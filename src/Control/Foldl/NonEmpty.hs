@@ -1,3 +1,9 @@
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE CPP #-}
+
 {-| This module provides a `Fold1` type that is a \"non-empty\" analog of the
     `Fold` type, meaning that it requires at least one input element in order to
     produce a result
@@ -7,33 +13,125 @@
     which can make use of the non-empty input guarantee (e.g. `head`).  For
     all other utilities you can convert them from the equivalent `Fold` using
     `fromFold`.
+
+    Import this module qualified to avoid clashing with the Prelude:
+
+>>> import qualified Control.Foldl.NonEmpty as Foldl1
+
+    Use 'fold1' to apply a 'Fold1' to a non-empty list:
+
+>>> Foldl1.fold1 Foldl1.last (1 :| [2..10])
+10
+
 -}
 
-module Control.Foldl.NonEmpty where
+module Control.Foldl.NonEmpty (
+    -- * Fold Types
+      Fold1(.., Fold1_)
 
-import Control.Applicative (liftA2)
+    -- * Folding
+    , Control.Foldl.NonEmpty.fold1
+
+    -- * Conversion between Fold and Fold1
+    , fromFold
+    , toFold
+
+    -- * Folds
+    , sconcat
+    , head
+    , last
+    , maximum
+    , maximumBy
+    , minimum
+    , minimumBy
+
+    -- ** Non-empty Container Folds
+    , nonEmpty
+
+    -- * Utilities
+    , purely
+    , purely_
+    , premap
+    , FromMaybe(..)
+    , Handler1
+    , handles
+    , foldOver
+    , folded1
+    ) where
+
+import Control.Applicative (liftA2, Const(..))
 import Control.Foldl (Fold(..))
 import Control.Foldl.Internal (Either'(..))
 import Data.List.NonEmpty (NonEmpty(..))
+import Data.Monoid (Dual(..))
+import Data.Functor.Apply (Apply)
 import Data.Profunctor (Profunctor(..))
-import Data.Semigroup.Foldable (Foldable1(..))
+import Data.Semigroup.Foldable (Foldable1(..), traverse1_)
+import Data.Functor.Contravariant (Contravariant(..))
+
 import Prelude hiding (head, last, minimum, maximum)
 
 import qualified Control.Foldl as Foldl
+
+{- $setup
+
+>>> import qualified Control.Foldl.NonEmpty as Foldl1
+>>> import qualified Data.List.NonEmpty as NonEmpty
+>>> import Data.Functor.Apply (Apply(..))
+>>> import Data.Semigroup.Traversable (Traversable1(..))
+>>> import Data.Monoid (Sum(..))
+
+>>> _2 f (x, y) = fmap (\i -> (x, i)) (f y)
+
+>>> both f (x, y) = (,) <$> f x <.> f y
+
+-}
 
 {-| A `Fold1` is like a `Fold` except that it consumes at least one input
     element
 -}
 data Fold1 a b = Fold1 (a -> Fold a b)
 
+{-| @Fold1_@ is an alternative to the @Fold1@ constructor if you need to
+    explicitly work with an initial, step and extraction function.
+
+    @Fold1_@ is similar to the @Fold@ constructor, which also works with an
+    initial, step and extraction function. However, note that @Fold@ takes the
+    step function as the first argument and the initial accumulator as the
+    second argument, whereas @Fold1_@ takes them in swapped order:
+
+    @Fold1_ @ @ initial @ @ step @ @ extract@
+
+    While @Fold@ resembles 'Prelude.foldl', @Fold1_@ resembles
+    'Data.Foldable1.foldlMap1'.
+-}
+pattern Fold1_ :: forall a b. forall x. (a -> x) -> (x -> a -> x) -> (x -> b) -> Fold1 a b
+pattern Fold1_ begin step done <- (toFold_ -> (begin, step, done))
+  where Fold1_ begin step done = Fold1 $ \a -> Fold step (begin a) done
+#if __GLASGOW_HASKELL__ >= 902
+{-# INLINABLE Fold1_ #-}
+#endif
+{-# COMPLETE Fold1_ :: Fold1 #-}
+
+toFold_ :: Fold1 a b -> (a -> Fold a b, Fold a b -> a -> Fold a b, Fold a b -> b)
+toFold_ (Fold1 (f :: a -> Fold a b)) = (begin', step', done')
+  where
+    done' :: Fold a b -> b
+    done' (Fold _step begin done) = done begin
+
+    step' :: Fold a b -> a -> Fold a b
+    step' (Fold step begin done) a = Fold step (step begin a) done
+
+    begin' :: a -> Fold a b
+    begin' = f
+{-# INLINABLE toFold_ #-}
+
 instance Functor (Fold1 a) where
     fmap f (Fold1 k) = Fold1 (fmap (fmap f) k)
     {-# INLINE fmap #-}
 
 instance Profunctor Fold1 where
-    lmap f (Fold1 k) = Fold1 k'
-      where
-        k' a = lmap f (k (f a))
+    lmap = premap
     {-# INLINE lmap #-}
 
     rmap = fmap
@@ -221,3 +319,115 @@ minimumBy cmp = Fold1 (\begin -> Fold min' begin id)
         GT -> y
         _  -> x
 {-# INLINABLE minimumBy #-}
+
+-- | Upgrade a fold to accept the 'Fold1' type
+purely :: (forall x . (a -> x) -> (x -> a -> x) -> (x -> b) -> r) -> Fold1 a b -> r
+purely f (Fold1_ begin step done) = f begin step done
+{-# INLINABLE purely #-}
+
+-- | Upgrade a more traditional fold to accept the `Fold1` type
+purely_ :: (forall x . (a -> x) -> (x -> a -> x) -> x) -> Fold1 a b -> b
+purely_ f (Fold1_ begin step done) = done (f begin step)
+{-# INLINABLE purely_ #-}
+
+{-| @(premap f folder)@ returns a new 'Fold1' where f is applied at each step
+
+> Foldl1.fold1 (premap f folder) list = Foldl1.fold1 folder (NonEmpty.map f list)
+
+>>> Foldl1.fold1 (premap Sum Foldl1.sconcat) (1 :| [2..10])
+Sum {getSum = 55}
+
+>>> Foldl1.fold1 Foldl1.sconcat $ NonEmpty.map Sum (1 :| [2..10])
+Sum {getSum = 55}
+
+> premap id = id
+>
+> premap (f . g) = premap g . premap f
+
+> premap k (pure r) = pure r
+>
+> premap k (f <*> x) = premap k f <*> premap k x
+-}
+premap :: (a -> b) -> Fold1 b r -> Fold1 a r
+premap f (Fold1 k) = Fold1 k'
+  where
+    k' a = lmap f (k (f a))
+{-# INLINABLE premap #-}
+
+{-|
+> instance Monad m => Semigroup (FromMaybe m a) where
+>     mappend (FromMaybe f) (FromMaybe g) = FromMaybeM (f . Just . g)
+-}
+newtype FromMaybe b = FromMaybe { appFromMaybe :: Maybe b -> b }
+
+instance Semigroup (FromMaybe b) where
+    FromMaybe f <> FromMaybe g = FromMaybe (f . (Just $!) . g)
+    {-# INLINE (<>) #-}
+
+{-| A handler for the upstream input of a `Fold1`
+
+    This is compatible with van Laarhoven optics as defined in the lens package.
+    Any lens, fold1 or traversal1 will type-check as a `Handler1`.
+-}
+type Handler1 a b =
+    forall x. (b -> Const (Dual (FromMaybe x)) b) -> a -> Const (Dual (FromMaybe x)) a
+
+{-| @(handles t folder)@ transforms the input of a `Fold1` using a Lens,
+    Traversal1, or Fold1 optic:
+
+> handles _1        :: Fold1 a r -> Fold1 (a, b) r
+> handles traverse1 :: Traversable1 t => Fold1 a r -> Fold1 (t a) r
+> handles folded1   :: Foldable1    t => Fold1 a r -> Fold1 (t a) r
+
+>>> Foldl1.fold1 (handles traverse1 Foldl1.nonEmpty) $ (1 :| [2..4]) :| [ 5 :| [6,7], 8 :| [9,10] ]
+1 :| [2,3,4,5,6,7,8,9,10]
+
+>>> Foldl1.fold1 (handles _2 Foldl1.sconcat) $ (1,"Hello ") :| [(2,"World"),(3,"!")]
+"Hello World!"
+
+> handles id = id
+>
+> handles (f . g) = handles f . handles g
+
+> handles t (pure r) = pure r
+>
+> handles t (f <*> x) = handles t f <*> handles t x
+-}
+handles :: forall a b r. Handler1 a b -> Fold1 b r -> Fold1 a r
+handles k (Fold1_ begin step done) = Fold1_ begin' step' done
+  where
+    begin' = stepAfromMaybe Nothing
+    step' x = stepAfromMaybe (Just $! x)
+    stepAfromMaybe = flip (appFromMaybe . getDual . getConst . k (Const . Dual . FromMaybe . flip stepBfromMaybe))
+    stepBfromMaybe = maybe begin step
+{-# INLINABLE handles #-}
+
+{- | @(foldOver f folder xs)@ folds all values from a Lens, Traversal1 or Fold1 optic with the given folder
+
+>>> foldOver (_2 . both) Foldl1.nonEmpty (1, (2, 3))
+2 :| [3]
+
+> Foldl1.foldOver f folder xs == Foldl1.fold1 folder (xs ^.. f)
+
+> Foldl1.foldOver (folded1 . f) folder == Foldl1.fold1 (Foldl1.handles f folder)
+
+> Foldl1.foldOver folded1 == Foldl1.fold1
+
+-}
+foldOver :: Handler1 s a -> Fold1 a b -> s -> b
+foldOver l (Fold1_ begin step done) =
+    done . stepSfromMaybe Nothing
+  where
+    stepSfromMaybe = flip (appFromMaybe . getDual . getConst . l (Const . Dual . FromMaybe . flip stepAfromMaybe))
+    stepAfromMaybe = maybe begin step
+{-# INLINABLE foldOver #-}
+
+{-|
+> handles folded1 :: Foldable1 t => Fold1 a r -> Fold1 (t a) r
+-}
+folded1
+    :: (Contravariant f, Apply f, Foldable1 t)
+    => (a -> f a) -> (t a -> f (t a))
+folded1 k ts = contramap (\_ -> ()) (traverse1_ k ts)
+{-# INLINABLE folded1 #-}
+

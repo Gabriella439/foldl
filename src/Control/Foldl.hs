@@ -92,11 +92,11 @@ module Control.Foldl (
     , Control.Foldl.mapM_
     , sink
 
-    -- * Generic Folds
+    -- ** Generic Folds
     , genericLength
     , genericIndex
 
-    -- * Container folds
+    -- ** Container Folds
     , list
     , revList
     , nub
@@ -209,6 +209,7 @@ import qualified Data.Semigroupoid
 {- $setup
 
 >>> import qualified Control.Foldl as Foldl
+>>> import Data.Functor.Apply (Apply(..))
 
 >>> _2 f (x, y) = fmap (\i -> (x, i)) (f y)
 
@@ -218,7 +219,7 @@ import qualified Data.Semigroupoid
 >>>         in Control.Foldl.Optics.prism Just maybeEither
 >>> :}
 
->>> both f (x, y) = (,) <$> f x <*> f y
+>>> both f (x, y) = (,) <$> f x <.> f y
 
 -}
 
@@ -1349,7 +1350,7 @@ type Handler a b =
 >>> fold (handles traverse sum) [[1..5],[6..10]]
 55
 
->>> fold (handles (traverse.traverse) sum) [[Nothing, Just 2, Just 7],[Just 13, Nothing, Just 20]]
+>>> fold (handles (traverse . traverse) sum) [[Nothing, Just 2, Just 7],[Just 13, Nothing, Just 20]]
 42
 
 >>> fold (handles (filtered even) sum) [1..10]
@@ -1382,7 +1383,7 @@ handles k (Fold step begin done) = Fold step' begin done
 
 > Foldl.foldOver f folder xs == Foldl.fold folder (xs^..f)
 
-> Foldl.foldOver (folded.f) folder == Foldl.fold (handles f folder)
+> Foldl.foldOver (folded . f) folder == Foldl.fold (handles f folder)
 
 > Foldl.foldOver folded == Foldl.fold
 
@@ -1443,7 +1444,7 @@ handlesM k (FoldM step begin done) = FoldM step' begin done
 
 {- | @(foldOverM f folder xs)@ folds all values from a Lens, Traversal, Prism or Fold monadically with the given folder
 
-> Foldl.foldOverM (folded.f) folder == Foldl.foldM (handlesM f folder)
+> Foldl.foldOverM (folded . f) folder == Foldl.foldM (handlesM f folder)
 
 > Foldl.foldOverM folded == Foldl.foldM
 
