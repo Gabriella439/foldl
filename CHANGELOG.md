@@ -1,3 +1,5 @@
+1.4.17
+
 - Add [Fold1 utilities](): `purely`, `purely_`, `premap`, `handles`, `foldOver`, `folded1`
 - Add pattern synonym `Fold1_` that makes the initial, step and extraction functions explicit.
 
