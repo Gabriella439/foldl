@@ -219,7 +219,7 @@ import qualified Data.Semigroupoid
 >>>         in Control.Foldl.Optics.prism Just maybeEither
 >>> :}
 
->>> both f (x, y) = (,) <$> f x <.> f y
+>>> both f (x, y) = (,) <$> f x <*> f y
 
 -}
 

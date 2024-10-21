@@ -83,7 +83,7 @@ import qualified Control.Foldl as Foldl
 
 >>> _2 f (x, y) = fmap (\i -> (x, i)) (f y)
 
->>> both f (x, y) = (,) <$> f x <.> f y
+>>> both1 f (x, y) = (,) <$> f x <.> f y
 
 -}
 
@@ -404,7 +404,7 @@ handles k (Fold1_ begin step done) = Fold1_ begin' step' done
 
 {- | @(foldOver f folder xs)@ folds all values from a Lens, Traversal1 or Fold1 optic with the given folder
 
->>> foldOver (_2 . both) Foldl1.nonEmpty (1, (2, 3))
+>>> foldOver (_2 . both1) Foldl1.nonEmpty (1, (2, 3))
 2 :| [3]
 
 > Foldl1.foldOver f folder xs == Foldl1.fold1 folder (xs ^.. f)
