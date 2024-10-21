@@ -1,7 +1,7 @@
 1.4.17
 
-- Add [Fold1 utilities](): `purely`, `purely_`, `premap`, `handles`, `foldOver`, `folded1`
-- Add pattern synonym `Fold1_` that makes the initial, step and extraction functions explicit.
+- Add [Fold1 utilities](https://github.com/Gabriella439/foldl/pull/212): `purely`, `purely_`, `premap`, `handles`, `foldOver`, `folded1`
+- Add pattern synonym [`Fold1_`](https://github.com/Gabriella439/foldl/pull/212) that makes the initial, step and extraction functions explicit.
 
 1.4.16
 
@@ -15,7 +15,7 @@
 
 - Add [`Control.Foldl.NonEmpty.nonEmpty`](https://github.com/Gabriella439/foldl/pull/186)
 - Add [`Control.Foldl.NonEmpty.toFold`](https://github.com/Gabriella439/foldl/pull/191)
- - [Generalize `fold1` to work with `Foldable1`](https://github.com/Gabriella439/foldl/pull/185)
+- [Generalize `fold1` to work with `Foldable1`](https://github.com/Gabriella439/foldl/pull/185)
 
 1.4.13
 
