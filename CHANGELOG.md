@@ -1,3 +1,5 @@
+- Add [`Closed`](https://github.com/Gabriella439/foldl/pull/215) instance for `Fold`
+
 1.4.17
 
 - Add [Fold1 utilities](https://github.com/Gabriella439/foldl/pull/212): `purely`, `purely_`, `premap`, `handles`, `foldOver`, `folded1`

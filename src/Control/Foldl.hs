@@ -245,8 +245,12 @@ instance Profunctor Fold where
     rmap = fmap
 
 instance Choice Fold where
-    right' (Fold step begin done) = Fold (liftA2 step) (Right begin) (fmap done)
+    right' = nest
     {-# INLINE right' #-}
+
+instance Closed Fold where
+    closed = nest
+    {-# INLINE closed #-}
 
 instance Cosieve Fold [] where
     cosieve = fold
