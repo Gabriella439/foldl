@@ -118,6 +118,7 @@ module Control.Foldl (
     , impurely_
     , generalize
     , simplify
+    , lifts
     , hoists
     , duplicateM
     , _Fold1
@@ -1163,6 +1164,14 @@ simplify (FoldM step begin done) = Fold step' begin' done'
 hoists :: (forall x . m x -> n x) -> FoldM m a b -> FoldM n a b
 hoists phi (FoldM step begin done) = FoldM (\a b -> phi (step a b)) (phi begin) (phi . done)
 {-# INLINABLE hoists #-}
+
+{- | Lift a monadic value to a 'FoldM';
+     works like 'Control.Monad.Trans.Class.lift'.
+
+> lifts . pure = pure
+-}
+lifts :: Monad m => m b -> FoldM m a b
+lifts mb = FoldM (\() _ -> pure ()) (pure ()) (\() -> mb)
 
 {-| Allows to continue feeding a 'FoldM' even after passing it to a function
 that closes it.
