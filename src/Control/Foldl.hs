@@ -1239,11 +1239,11 @@ premapM f (FoldM step begin done) = FoldM step' begin done
 
 {-| @(postmapM f folder)@ returns a new 'FoldM' where f is applied to the final value.
 
-> postmapM return = id
+> postmapM pure = id
 >
 > postmapM (f >=> g) = postmapM g . postmapM f
 
-> postmapM k (pure r) = k r
+> postmapM k (pure r) = lifts (k r)
 -}
 postmapM :: Monad m => (a -> m r) -> FoldM m x a -> FoldM m x r
 postmapM f (FoldM step begin done) = FoldM step begin done'
