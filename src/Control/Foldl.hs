@@ -277,6 +277,24 @@ instance Applicative (Fold a) where
         in  Fold step begin done
     {-# INLINE (<*>) #-}
 
+{-|
+Runs a fold, which depends on the result of another fold sequentially on the same input.
+
+To achieve that it buffers the input.
+That's why it should be more efficient to just apply the composed folds to the same input structure.
+This mechanism however provides a nice way to encapsulate.
+-}
+instance Monad (Fold a) where
+  return = pure
+  Fold step begin done >>= k =
+    Fold newStep newBegin newDone
+    where
+      newStep (Pair inputs acc) input =
+        Pair (input : inputs) (step acc input)
+      newBegin = Pair [] begin
+      newDone (Pair inputs acc) =
+        fold (k (done acc)) (reverse inputs)
+
 instance Extend (Fold a) where
     duplicated = duplicate
     {-# INLINE duplicated #-}
