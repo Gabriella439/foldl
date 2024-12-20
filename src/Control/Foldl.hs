@@ -118,6 +118,7 @@ module Control.Foldl (
     , impurely_
     , generalize
     , simplify
+    , lifts
     , hoists
     , duplicateM
     , _Fold1
@@ -1169,6 +1170,14 @@ hoists :: (forall x . m x -> n x) -> FoldM m a b -> FoldM n a b
 hoists phi (FoldM step begin done) = FoldM (\a b -> phi (step a b)) (phi begin) (phi . done)
 {-# INLINABLE hoists #-}
 
+{- | Lift a monadic value to a 'FoldM';
+     works like 'Control.Monad.Trans.Class.lift'.
+
+> lifts . pure = pure
+-}
+lifts :: Monad m => m b -> FoldM m a b
+lifts mb = FoldM (\() _ -> pure ()) (pure ()) (\() -> mb)
+
 {-| Allows to continue feeding a 'FoldM' even after passing it to a function
 that closes it.
 
@@ -1235,11 +1244,11 @@ premapM f (FoldM step begin done) = FoldM step' begin done
 
 {-| @(postmapM f folder)@ returns a new 'FoldM' where f is applied to the final value.
 
-> postmapM return = id
+> postmapM pure = id
 >
 > postmapM (f >=> g) = postmapM g . postmapM f
 
-> postmapM k (pure r) = k r
+> postmapM k (pure r) = lifts (k r)
 -}
 postmapM :: Monad m => (a -> m r) -> FoldM m x a -> FoldM m x r
 postmapM f (FoldM step begin done) = FoldM step begin done'
