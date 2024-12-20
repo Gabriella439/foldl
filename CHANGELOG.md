@@ -1,6 +1,7 @@
 - Add [`nest`](https://github.com/Gabriella439/foldl/pull/215) for `Fold1`
 - Add [`Choice`, `Closed`, `Cosieve`, `Extend`, `Semigroupoid`, `Category`, `Strong`, `Arrow` and `ArrowChoice`](https://github.com/Gabriella439/foldl/pull/215) instances for `Fold1`
 - Add [`Closed`](https://github.com/Gabriella439/foldl/pull/215) instance for `Fold`
+- [Define `stimes` from `EndoM`'s Semigroup instance for 0](https://github.com/Gabriella439/foldl/pull/217)
 
 1.4.17
 
