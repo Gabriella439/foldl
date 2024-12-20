@@ -1,3 +1,5 @@
+1.4.18
+
 - Add [`lifts`](https://github.com/Gabriella439/foldl/pull/214)
 - Add [`nest`](https://github.com/Gabriella439/foldl/pull/215) for `Fold1`
 - Add [`Choice`, `Closed`, `Cosieve`, `Extend`, `Semigroupoid`, `Category`, `Strong`, `Arrow` and `ArrowChoice`](https://github.com/Gabriella439/foldl/pull/215) instances for `Fold1`
