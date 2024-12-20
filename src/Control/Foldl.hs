@@ -163,6 +163,7 @@ import Data.Functor.Contravariant (Contravariant(..))
 import Data.HashMap.Strict (HashMap)
 import Data.Map.Strict (Map)
 import Data.Monoid hiding ((<>))
+import Data.Semigroup (Semigroup(stimes), stimesMonoid)
 import Data.Semigroupoid (Semigroupoid)
 import Data.Functor.Extend (Extend(..))
 import Data.Profunctor
@@ -220,7 +221,7 @@ import qualified Data.Semigroupoid
 >>>         in Control.Foldl.Optics.prism Just maybeEither
 >>> :}
 
->>> both f (x, y) = (,) <$> f x <.> f y
+>>> both f (x, y) = (,) <$> f x <*> f y
 
 -}
 
@@ -246,8 +247,12 @@ instance Profunctor Fold where
     rmap = fmap
 
 instance Choice Fold where
-    right' (Fold step begin done) = Fold (liftA2 step) (Right begin) (fmap done)
+    right' = nest
     {-# INLINE right' #-}
+
+instance Closed Fold where
+    closed = nest
+    {-# INLINE closed #-}
 
 instance Cosieve Fold [] where
     cosieve = fold
@@ -1412,6 +1417,9 @@ newtype EndoM m a = EndoM { appEndoM :: a -> m a }
 instance Monad m => Semigroup (EndoM m a) where
     (EndoM f) <> (EndoM g) = EndoM (f <=< g)
     {-# INLINE (<>) #-}
+
+    stimes = stimesMonoid
+    {-# INLINE stimes #-}
 
 instance Monad m => Monoid (EndoM m a) where
     mempty = EndoM return

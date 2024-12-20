@@ -1,9 +1,13 @@
 - Add [`lifts`](https://github.com/Gabriella439/foldl/pull/214)
+- Add [`nest`](https://github.com/Gabriella439/foldl/pull/215) for `Fold1`
+- Add [`Choice`, `Closed`, `Cosieve`, `Extend`, `Semigroupoid`, `Category`, `Strong`, `Arrow` and `ArrowChoice`](https://github.com/Gabriella439/foldl/pull/215) instances for `Fold1`
+- Add [`Closed`](https://github.com/Gabriella439/foldl/pull/215) instance for `Fold`
+- [Define `stimes` from `EndoM`'s Semigroup instance for 0](https://github.com/Gabriella439/foldl/pull/217)
 
 1.4.17
 
-- Add [Fold1 utilities](): `purely`, `purely_`, `premap`, `handles`, `foldOver`, `folded1`
-- Add pattern synonym `Fold1_` that makes the initial, step and extraction functions explicit.
+- Add [Fold1 utilities](https://github.com/Gabriella439/foldl/pull/212): `purely`, `purely_`, `premap`, `handles`, `foldOver`, `folded1`
+- Add pattern synonym [`Fold1_`](https://github.com/Gabriella439/foldl/pull/212) that makes the initial, step and extraction functions explicit.
 
 1.4.16
 
@@ -17,7 +21,7 @@
 
 - Add [`Control.Foldl.NonEmpty.nonEmpty`](https://github.com/Gabriella439/foldl/pull/186)
 - Add [`Control.Foldl.NonEmpty.toFold`](https://github.com/Gabriella439/foldl/pull/191)
- - [Generalize `fold1` to work with `Foldable1`](https://github.com/Gabriella439/foldl/pull/185)
+- [Generalize `fold1` to work with `Foldable1`](https://github.com/Gabriella439/foldl/pull/185)
 
 1.4.13
 

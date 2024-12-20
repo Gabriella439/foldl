@@ -3,6 +3,7 @@
 {-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 {-| This module provides a `Fold1` type that is a \"non-empty\" analog of the
     `Fold` type, meaning that it requires at least one input element in order to
@@ -57,16 +58,24 @@ module Control.Foldl.NonEmpty (
     , handles
     , foldOver
     , folded1
+    , nest
     ) where
 
 import Control.Applicative (liftA2, Const(..))
+import Control.Arrow (Arrow (..), ArrowChoice (..))
+import Control.Category (Category ())
+import qualified Control.Category
+import Control.Comonad (Comonad(..))
 import Control.Foldl (Fold(..))
 import Control.Foldl.Internal (Either'(..))
 import Data.List.NonEmpty (NonEmpty(..))
 import Data.Monoid (Dual(..))
-import Data.Functor.Apply (Apply)
-import Data.Profunctor (Profunctor(..))
+import Data.Functor.Apply (Apply (..))
+import Data.Functor.Extend (Extend (..))
+import Data.Profunctor
+import Data.Profunctor.Sieve (Cosieve(..))
 import Data.Semigroup.Foldable (Foldable1(..), traverse1_)
+import Data.Semigroupoid (Semigroupoid (..))
 import Data.Functor.Contravariant (Contravariant(..))
 
 import Prelude hiding (head, last, minimum, maximum)
@@ -83,7 +92,7 @@ import qualified Control.Foldl as Foldl
 
 >>> _2 f (x, y) = fmap (\i -> (x, i)) (f y)
 
->>> both f (x, y) = (,) <$> f x <.> f y
+>>> both1 f (x, y) = (,) <$> f x <.> f y
 
 -}
 
@@ -137,12 +146,28 @@ instance Profunctor Fold1 where
     rmap = fmap
     {-# INLINE rmap #-}
 
+instance Choice Fold1 where
+    right' = nest
+    {-# INLINE right' #-}
+
+instance Closed Fold1 where
+    closed = nest
+    {-# INLINE closed #-}
+
+instance Cosieve Fold1 NonEmpty where
+    cosieve = Control.Foldl.NonEmpty.fold1
+    {-# INLINE cosieve #-}
+
 instance Applicative (Fold1 a) where
     pure b = Fold1 (pure (pure b))
     {-# INLINE pure #-}
 
     Fold1 l <*> Fold1 r = Fold1 (liftA2 (<*>) l r)
     {-# INLINE (<*>) #-}
+
+instance Extend (Fold1 a) where
+    duplicated (Fold1 f) = Fold1 $ fmap fromFold . duplicated . f
+    {-# INLINE duplicated #-}
 
 instance Semigroup b => Semigroup (Fold1 a b) where
     (<>) = liftA2 (<>)
@@ -154,6 +179,36 @@ instance Monoid b => Monoid (Fold1 a b) where
 
     mappend = (<>)
     {-# INLINE mappend #-}
+
+instance Semigroupoid Fold1 where
+    o (Fold1 l1) (Fold1 r1) = Fold1 f1
+      where
+        f1 a = let r = r1 a
+                   l = l1 $ extract r
+               in o l r
+    {-# INLINE o #-}
+
+instance Category Fold1 where
+    (.) = o
+    {-# INLINE (.) #-}
+
+    id = last
+    {-# INLINE id #-}
+
+instance Strong Fold1 where
+    first' f = (,) <$> lmap fst f <*> lmap snd last
+    {-# INLINE first' #-}
+
+instance Arrow Fold1 where
+    arr f = f <$> last
+    {-# INLINE arr #-}
+
+    first = first'
+    {-# INLINE first #-}
+
+instance ArrowChoice Fold1 where
+    left = left'
+    {-# INLINE left #-}
 
 instance Num b => Num (Fold1 a b) where
     fromInteger = pure . fromInteger
@@ -404,7 +459,7 @@ handles k (Fold1_ begin step done) = Fold1_ begin' step' done
 
 {- | @(foldOver f folder xs)@ folds all values from a Lens, Traversal1 or Fold1 optic with the given folder
 
->>> foldOver (_2 . both) Foldl1.nonEmpty (1, (2, 3))
+>>> foldOver (_2 . both1) Foldl1.nonEmpty (1, (2, 3))
 2 :| [3]
 
 > Foldl1.foldOver f folder xs == Foldl1.fold1 folder (xs ^.. f)
@@ -431,3 +486,12 @@ folded1
 folded1 k ts = contramap (\_ -> ()) (traverse1_ k ts)
 {-# INLINABLE folded1 #-}
 
+{-| Nest a fold in an Apply.
+-}
+nest :: Apply f => Fold1 a b -> Fold1 (f a) (f b)
+nest (Fold1_ i s e) =
+    Fold1_
+        (fmap i)
+        (liftF2 s)
+        (fmap e)
+{-# INLINABLE nest #-}
