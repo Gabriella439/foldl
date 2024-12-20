@@ -60,7 +60,7 @@ Benchmark Foldl
     HS-Source-Dirs: bench
     Main-Is: Foldl.hs
     Build-Depends:
-        base,
+        base >= 4.11.0.0 && < 5,
         criterion,
         foldl,
         profunctors
@@ -72,7 +72,7 @@ Benchmark Scanl
     HS-Source-Dirs: bench
     Main-Is: Scanl.hs
     Build-Depends:
-        base,
+        base >= 4.11.0.0 && < 5,
         criterion,
         foldl
     GHC-Options: -O2 -Wall -rtsopts -with-rtsopts=-T
@@ -83,7 +83,7 @@ Test-Suite doctest
     HS-Source-Dirs: test
     Main-Is: doctest.hs
     Build-Depends:
-        base,
+        base >= 4.11.0.0 && < 5,
         doctest >= 0.16
     GHC-Options: -threaded
     Default-Language: Haskell2010
