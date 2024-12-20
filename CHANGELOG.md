@@ -1,3 +1,5 @@
+- [Define `stimes` from `EndoM`'s Semigroup instance for 0](https://github.com/Gabriella439/foldl/pull/217)
+
 1.4.17
 
 - Add [Fold1 utilities](): `purely`, `purely_`, `premap`, `handles`, `foldOver`, `folded1`
