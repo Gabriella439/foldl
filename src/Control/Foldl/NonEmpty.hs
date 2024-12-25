@@ -729,9 +729,9 @@ postmapM phi (FoldM1 f) = FoldM1 $ Foldl.postmapM phi . f
 > instance Monad m => Semigroup (FromMaybe m a) where
 >     mappend (FromMaybe f) (FromMaybe g) = FromMaybeM (f . Just . g)
 -}
-newtype FromMaybe b = FromMaybe { appFromMaybe :: Maybe b -> b }
+newtype FromMaybe a = FromMaybe { appFromMaybe :: Maybe a -> a }
 
-instance Semigroup (FromMaybe b) where
+instance Semigroup (FromMaybe a) where
     FromMaybe f <> FromMaybe g = FromMaybe (f . (Just $!) . g)
     {-# INLINE (<>) #-}
 
