@@ -740,8 +740,8 @@ instance Semigroup (FromMaybe a) where
     This is compatible with van Laarhoven optics as defined in the lens package.
     Any Lens, Fold1 or Traversal1 will type-check as a `Handler1`.
 -}
-type Handler1 a b =
-    forall x. (b -> Const (Dual (FromMaybe x)) b) -> a -> Const (Dual (FromMaybe x)) a
+type Handler1 s a =
+    forall x. (a -> Const (Dual (FromMaybe x)) a) -> s -> Const (Dual (FromMaybe x)) s
 
 {-| @(handles t folder)@ transforms the input of a `Fold1` using a Lens,
     Traversal1, or Fold1 optic:
@@ -764,13 +764,13 @@ type Handler1 a b =
 >
 > handles t (f <*> x) = handles t f <*> handles t x
 -}
-handles :: forall a b r. Handler1 a b -> Fold1 b r -> Fold1 a r
+handles :: forall s a r. Handler1 s a -> Fold1 a r -> Fold1 s r
 handles k (Fold1_ begin step done) = Fold1_ begin' step' done
   where
-    begin' = stepAfromMaybe Nothing
-    step' x = stepAfromMaybe (Just $! x)
-    stepAfromMaybe = flip (appFromMaybe . getDual . getConst . k (Const . Dual . FromMaybe . flip stepBfromMaybe))
-    stepBfromMaybe = maybe begin step
+    begin' = stepSfromMaybe Nothing
+    step' x = stepSfromMaybe (Just $! x)
+    stepSfromMaybe = flip (appFromMaybe . getDual . getConst . k (Const . Dual . FromMaybe . flip stepAfromMaybe))
+    stepAfromMaybe = maybe begin step
 {-# INLINABLE handles #-}
 
 {- | @(foldOver f folder xs)@ folds all values from a Lens, Traversal1 or Fold1 optic with the given folder
@@ -785,7 +785,7 @@ handles k (Fold1_ begin step done) = Fold1_ begin' step' done
 > Foldl1.foldOver folded1 == Foldl1.fold1
 
 -}
-foldOver :: Handler1 s a -> Fold1 a b -> s -> b
+foldOver :: Handler1 s a -> Fold1 a r -> s -> r
 foldOver l (Fold1_ begin step done) =
     done . stepSfromMaybe Nothing
   where
@@ -808,8 +808,8 @@ instance Monad m => Semigroup (FromMaybeM m a) where
     This is compatible with van Laarhoven optics as defined in the lens package.
     Any Lens, Fold1 or Traversal1 will type-check as a `HandlerM1`
 -}
-type HandlerM1 m a b =
-    forall x . (b -> Const (Dual (FromMaybeM m x)) b) -> a -> Const (Dual (FromMaybeM m x)) a
+type HandlerM1 m s a =
+    forall x . (a -> Const (Dual (FromMaybeM m x)) a) -> s -> Const (Dual (FromMaybeM m x)) s
 
 {-| @(handlesM t folder)@ transforms the input of a `FoldM1` using a Lens,
     Traversal1 or Fold1 optic:
@@ -828,13 +828,13 @@ type HandlerM1 m a b =
 >
 > handlesM t (f <*> x) = handlesM t f <*> handlesM t x
 -}
-handlesM :: Monad m => HandlerM1 m a b -> FoldM1 m b r -> FoldM1 m a r
+handlesM :: Monad m => HandlerM1 m s a -> FoldM1 m a r -> FoldM1 m s r
 handlesM k (FoldM1_ begin step done) = FoldM1_ begin' step' done
   where
-    begin' = stepMaybeA Nothing
-    step' b = stepMaybeA (Just $! b)
-    stepMaybeA = flip (appFromMaybeM . getDual . getConst . k (Const . Dual . FromMaybeM . flip stepMaybeB))
-    stepMaybeB = maybe begin step
+    begin' = stepMaybeS Nothing
+    step' b = stepMaybeS (Just $! b)
+    stepMaybeS = flip (appFromMaybeM . getDual . getConst . k (Const . Dual . FromMaybeM . flip stepMaybeA))
+    stepMaybeA = maybe begin step
 {-# INLINABLE handlesM #-}
 
 {- | @(foldOverM f folder xs)@ folds all values from a Lens, Traversal1 or
@@ -845,8 +845,8 @@ handlesM k (FoldM1_ begin step done) = FoldM1_ begin' step' done
 > Foldl1.foldOverM folded1 == Foldl1.foldM1
 
 -}
-foldOverM :: Monad m => HandlerM1 m s a -> FoldM1 m a b -> s -> m b
-foldOverM l (FoldM1_ (begin :: a -> m x) (step :: x -> a -> m x) (done :: x -> m b)) s = do
+foldOverM :: Monad m => HandlerM1 m s a -> FoldM1 m a r -> s -> m r
+foldOverM l (FoldM1_ begin step done) s = do
     r <- stepMaybeS Nothing s
     done r
   where

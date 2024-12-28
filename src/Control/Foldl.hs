@@ -1350,8 +1350,8 @@ dropM n (FoldM step begin done) = FoldM step' begin' done'
 
     Any lens, traversal, or prism will type-check as a `Handler`
 -}
-type Handler a b =
-    forall x . (b -> Const (Dual (Endo x)) b) -> a -> Const (Dual (Endo x)) a
+type Handler s a =
+    forall x . (a -> Const (Dual (Endo x)) a) -> s -> Const (Dual (Endo x)) s
 
 {-| @(handles t folder)@ transforms the input of a `Fold` using a lens,
     traversal, or prism:
@@ -1381,7 +1381,7 @@ type Handler a b =
 >
 > handles t (f <*> x) = handles t f <*> handles t x
 -}
-handles :: Handler a b -> Fold b r -> Fold a r
+handles :: Handler s a -> Fold a r -> Fold s r
 handles k (Fold step begin done) = Fold step' begin done
   where
     step' = flip (appEndo . getDual . getConst . k (Const . Dual . Endo . flip step))
@@ -1402,7 +1402,7 @@ handles k (Fold step begin done) = Fold step' begin done
 > Foldl.foldOver folded == Foldl.fold
 
 -}
-foldOver :: Handler s a -> Fold a b -> s -> b
+foldOver :: Handler s a -> Fold a r -> s -> r
 foldOver l (Fold step begin done) =
   done . flip appEndo begin . getDual . getConst . l (Const . Dual . Endo . flip step)
 {-# INLINABLE foldOver #-}
@@ -1432,8 +1432,8 @@ instance Monad m => Monoid (EndoM m a) where
 
     Any lens, traversal, or prism will type-check as a `HandlerM`
 -}
-type HandlerM m a b =
-    forall x . (b -> Const (Dual (EndoM m x)) b) -> a -> Const (Dual (EndoM m x)) a
+type HandlerM m s a =
+    forall x . (a -> Const (Dual (EndoM m x)) a) -> s -> Const (Dual (EndoM m x)) s
 
 {-| @(handlesM t folder)@ transforms the input of a `FoldM` using a lens,
     traversal, or prism:
@@ -1453,7 +1453,7 @@ type HandlerM m a b =
 >
 > handlesM t (f <*> x) = handlesM t f <*> handlesM t x
 -}
-handlesM :: HandlerM m a b -> FoldM m b r -> FoldM m a r
+handlesM :: HandlerM m s a -> FoldM m a r -> FoldM m s r
 handlesM k (FoldM step begin done) = FoldM step' begin done
   where
     step' = flip (appEndoM . getDual . getConst . k (Const . Dual . EndoM . flip step))
@@ -1466,7 +1466,7 @@ handlesM k (FoldM step begin done) = FoldM step' begin done
 > Foldl.foldOverM folded == Foldl.foldM
 
 -}
-foldOverM :: Monad m => HandlerM m s a -> FoldM m a b -> s -> m b
+foldOverM :: Monad m => HandlerM m s a -> FoldM m a r -> s -> m r
 foldOverM l (FoldM step begin done) s = do
   b <- begin
   r <- (flip appEndoM b . getDual . getConst . l (Const . Dual . EndoM . flip step)) s
