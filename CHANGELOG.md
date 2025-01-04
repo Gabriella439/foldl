@@ -1,3 +1,5 @@
+- Remove [unlawful](https://github.com/Gabriella439/foldl/pull/96) `ArrowChoice` instance for `Fold1`
+
 1.4.18
 
 - Add [`lifts`](https://github.com/Gabriella439/foldl/pull/214)

@@ -62,7 +62,7 @@ module Control.Foldl.NonEmpty (
     ) where
 
 import Control.Applicative (liftA2, Const(..))
-import Control.Arrow (Arrow (..), ArrowChoice (..))
+import Control.Arrow (Arrow (..))
 import Control.Category (Category ())
 import qualified Control.Category
 import Control.Comonad (Comonad(..))
@@ -205,10 +205,6 @@ instance Arrow Fold1 where
 
     first = first'
     {-# INLINE first #-}
-
-instance ArrowChoice Fold1 where
-    left = left'
-    {-# INLINE left #-}
 
 instance Num b => Num (Fold1 a b) where
     fromInteger = pure . fromInteger
