@@ -235,7 +235,7 @@ import qualified Data.Semigroupoid
     value of type __b__.
 -}
 data Fold a b
-  -- | @Fold @ @ step @ @ initial @ @ extract@
+  -- | @Fold step initial extract@.
   = forall x. Fold (x -> a -> x) x (x -> b)
 
 instance Functor (Fold a) where
@@ -403,7 +403,7 @@ instance Floating b => Floating (Fold a b) where
     results in a monadic value of type __m b__.
 -}
 data FoldM m a b =
-  -- | @FoldM @ @ step @ @ initial @ @ extract@
+  -- | @FoldM step initial extract@.
   forall x . FoldM (x -> a -> m x) (m x) (x -> m b)
 
 instance Functor m => Functor (FoldM m a) where

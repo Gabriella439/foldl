@@ -128,7 +128,7 @@ data Fold1 a b = Fold1 (a -> Fold a b)
     step function as the first argument and the initial accumulator as the
     second argument, whereas @Fold1_@ takes them in swapped order:
 
-    @Fold1_ @ @ initial @ @ step @ @ extract@
+    @Fold1_ initial step extract@.
 
     While @Fold@ resembles 'Prelude.foldl', @Fold1_@ resembles
     'Data.Foldable1.foldlMap1'.
