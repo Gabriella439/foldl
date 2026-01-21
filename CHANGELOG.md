@@ -1,3 +1,4 @@
+- Add [`FoldM1`](https://github.com/Gabriella439/foldl/pull/219) type.
 - Remove [unlawful](https://github.com/Gabriella439/foldl/pull/96) `ArrowChoice` instance for `Fold1`
 
 1.4.18
